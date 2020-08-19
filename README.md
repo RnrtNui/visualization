@@ -1,6 +1,6 @@
 #前端部分：
 ##作者：
-    鲁杨飞<br>
+    鲁杨飞
 ##概述：
     visualization可视化项目下包含数据可视化（DataVClient），模型可视化（VTKClient）:<br>
     VTKClient（模型可视化）基于vtk.js实现的前端可视化项目，支持多种模型数据文件格式，进行数据模型及结果进行渲染;<br>
