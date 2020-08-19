@@ -4,44 +4,53 @@ import ReactDOM from 'react-dom';
 import { Spin } from "antd";
 import echarts from 'echarts';
 import 'echarts-gl/dist/echarts-gl.js';
+import axios from 'axios';
 class Geographical extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            data: {}
+            data: {},
+            heatMapData: []
         }
     };
 
     componentDidMount = () => {
         let _this = this;
-        if (this.props.match.params.city) {
-            let city = this.props.match.params.city;
-            console.log(city)
-            let url = '/data/dicom/chinaData/' + `${city}` + '.json';
-            let xhr = new XMLHttpRequest();
-            xhr.open('GET', url, true);
-            xhr.responseType = 'json';
-            xhr.send();
-            xhr.onreadystatechange = (e) => {
-                if (xhr.readyState === 2) {
-                    var dom = document.createElement('div');
-                    dom.setAttribute('id', 'loading');
-                    document.body.appendChild(dom);
-                    ReactDOM.render(<Spin tip="加载中..." size="large" />, dom);
-                }
-                if (xhr.readyState === 4) {
-                    let data = xhr.response;
-                    _this.setState({
-                        data: data,
-                    });
-                    document.body.removeChild(document.getElementById('loading'));
-                }
-            };
+        if (this.props.match.params.id) {
+            let id = {};
+            id["timeID"] = this.props.match.params.id;
+            axios.post("http://192.168.2.134:8002/process/heatTwo", id).then((req) => {
+                console.log(req.data)
+                let heatMapData = JSON.parse(req.data.data.data);
+                let url = "/data/" + req.data.mapData;
+                let xhr = new XMLHttpRequest();
+                xhr.open('GET', url, true);
+                xhr.responseType = 'json';
+                xhr.send();
+                xhr.onreadystatechange = (e) => {
+                    if (xhr.readyState === 2) {
+                        var dom = document.createElement('div');
+                        dom.setAttribute('id', 'loading');
+                        document.body.appendChild(dom);
+                        ReactDOM.render(<Spin tip="加载中..." size="large" />, dom);
+                    }
+                    if (xhr.readyState === 4) {
+                        let data = xhr.response;
+                        _this.setState({
+                            data: data,
+                            heatMapData: heatMapData
+                        });
+                        document.body.removeChild(document.getElementById('loading'));
+                    }
+                };
+            }).catch(function (err) {
+                console.log(err);
+            })
         };
     };
 
     render() {
-        let { data } = this.state;
+        let { data, heatMapData } = this.state;
         if (Object.keys(data).length > 0) {
             var chart = echarts.init(document.getElementById('main'));
             echarts.registerMap('demo', data);
@@ -90,142 +99,17 @@ class Geographical extends Component {
                 "runConut": '537',
                 "num": '234'
             }];
-
-            function randomData() {
-                return Math.round(Math.random() * 500);
-            }
-
-            var dataMap = [{
-                name: '北京',
-                value: '100'
-            }, {
-                name: '天津',
-                value: randomData()
-            },
-            {
-                name: '上海',
-                value: randomData()
-            }, {
-                name: '重庆',
-                value: randomData()
-            },
-            {
-                name: '河北',
-                value: randomData()
-            }, {
-                name: '河南',
-                value: randomData()
-            },
-            {
-                name: '云南',
-                value: randomData()
-            }, {
-                name: '辽宁',
-                value: randomData()
-            },
-            {
-                name: '黑龙江',
-                value: randomData()
-            }, {
-                name: '湖南',
-                value: randomData()
-            },
-            {
-                name: '安徽',
-                value: randomData()
-            }, {
-                name: '山东',
-                value: randomData()
-            },
-            {
-                name: '新疆',
-                value: randomData()
-            }, {
-                name: '江苏',
-                value: randomData()
-            },
-            {
-                name: '浙江',
-                value: randomData()
-            }, {
-                name: '江西',
-                value: randomData()
-            },
-            {
-                name: '湖北',
-                value: randomData()
-            }, {
-                name: '广西',
-                value: randomData()
-            },
-            {
-                name: '甘肃',
-                value: randomData()
-            }, {
-                name: '山西',
-                value: randomData()
-            },
-            {
-                name: '内蒙古',
-                value: randomData()
-            }, {
-                name: '陕西',
-                value: randomData()
-            },
-            {
-                name: '吉林',
-                value: randomData()
-            }, {
-                name: '福建',
-                value: randomData()
-            },
-            {
-                name: '贵州',
-                value: randomData()
-            }, {
-                name: '广东',
-                value: randomData()
-            },
-            {
-                name: '青海',
-                value: randomData()
-            }, {
-                name: '西藏',
-                value: randomData()
-            },
-            {
-                name: '四川',
-                value: randomData()
-            }, {
-                name: '宁夏',
-                value: randomData()
-            },
-            {
-                name: '海南',
-                value: randomData()
-            }, {
-                name: '台湾',
-                value: randomData()
-            },
-            {
-                name: '香港',
-                value: randomData()
-            }, {
-                name: '澳门',
-                value: randomData()
-            }
-            ];
-            var convertData = function (data) {
-                var res = [];
-                for (var i = 0; i < data.length; i++) {
-                    var geoCoord = geoCoordMap[data[i].name];
-                    if (geoCoord) {
-                        res.push(geoCoord.concat(data[i].value));
-                    }
-                }
-                return res;
-            };
-            console.log(convertData(dataMap))
+            //数据转换
+            // var convertData = function (data) {
+            //     var res = [];
+            //     for (var i = 0; i < data.length; i++) {
+            //         var geoCoord = geoCoordMap[data[i].name];
+            //         if (geoCoord) {
+            //             res.push(geoCoord.concat(data[i].value));
+            //         }
+            //     }
+            //     return res;
+            // };
 
             chart.setOption({
                 "backgroundColor": "#F5FFFA",
@@ -257,7 +141,7 @@ class Geographical extends Component {
                 },
                 "grid": {},
                 "geo": {
-                    "map": "china",
+                    "map": "demo",
                     //"center": [0, 12],
                     "aspectScale": 0.8,
                     "roam": true,
@@ -288,7 +172,7 @@ class Geographical extends Component {
                     "type": "heatmap",
                     "minAlpha": 1,
                     "coordinateSystem": "geo",
-                    "data": convertData(dataMap),
+                    "data": heatMapData,
                     // "markPoint": { //标记点
                     //     // "symbol": 'path://M512 39.384615l169.353846 295.384615 342.646154 63.015385-240.246154 248.123077L827.076923 984.615385l-315.076923-145.723077L196.923077 984.615385l43.323077-334.769231L0 401.723077l342.646154-63.015385L512 39.384615',
                     //     //"symbolSize": 14, //图形大小

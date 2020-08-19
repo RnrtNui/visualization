@@ -26,7 +26,7 @@ export default class VtkRouter extends React.Component {
                     <Route exact path="/Geo" component={Geo} />                     {/* 柱状 */}
                     <Route exact path="/excel/:fileName/:type" component={Excel} />         {/* echarts图表 */}
                     <Route exact path="/cloudofwords/:id" component={CloudOfWords} />       {/* 词云图 */}
-                    <Route exact path="/geographical/:city" component={Geographical} />　   {/* echarts 热力图 */}
+                    <Route exact path="/geographical/:id" component={Geographical} />　   {/* echarts 热力图 */}
                     <Route exact path="/baidumap/:type/:id" component={BaiDuMap} />         {/* 百度地图 */}
                     <Route exact path="/googlemap" component={GoogleMap} />         {/* google地图 */}
                     <Route exact path="/echarts/:fileName" component={TestView} />  {/* 三维模型点集 */}

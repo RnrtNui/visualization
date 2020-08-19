@@ -21,6 +21,7 @@ func init() {
 	beego.AutoRouter(&controllers.LoginFilterController{})
 	beego.AutoRouter(&controllers.TestController{})
 
+	//其他接口
 	beego.Router("/vtkReadFile", &controllers.VtkReadFileController{})    //处理数据接口
 	beego.Router("/vtkIcon", &controllers.VtkAvatarController{})          //上传图标接口
 	beego.Router("/vtkCreate", &controllers.VtkCreateProjectController{}) //项目创建接口
@@ -41,6 +42,7 @@ func init() {
 	beego.Router("/process/upload", &controllers.ProcessuploadFileController{}) //流程上传
 	beego.Router("/process/readFile", &controllers.ProReadFileController{})     //处理文件
 
+	//地图数据接口
 	TransData := &controllers.ProTransController{}
 	beego.Router("/process/transData", TransData, "post:OnePost") //数据传输
 	beego.Router("/process/transTwo", TransData, "post:TwoPost")  //数据传输
@@ -49,5 +51,10 @@ func init() {
 	CloudWords := &controllers.CloudWordController{}
 	beego.Router("/process/cloudWord", CloudWords, "post:OnePost") //数据传输
 	beego.Router("/process/cloudTwo", CloudWords, "post:TwoPost")  //数据传输
+
+	//热力图接口
+	HeatMap := &controllers.HeatMapController{}
+	beego.Router("/process/heatMap", HeatMap, "post:OnePost") //数据传输
+	beego.Router("/process/heatTwo", HeatMap, "post:TwoPost") //数据传输
 
 }
