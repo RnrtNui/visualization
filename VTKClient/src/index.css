@@ -1,0 +1,110 @@
+body{
+    overflow: hidden;
+}
+
+.command{
+    display: inline-block;
+}
+
+.commands{
+    display: inline-block;
+    width: 1px;
+    height: 15px;
+    margin: 0 10px;
+    background: #ccc;
+}
+
+.command span {
+    display: inline-block;
+    width: 27px;
+    height: 27px;
+    margin: 0 6px;
+    padding-top: 6px;
+    text-align: center;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    color: #000;
+}
+
+.commands span:hover {
+    border: 1px solid #84c9e0;
+}
+  
+.disable span {
+    cursor: auto;
+}
+  
+.disable span:hover {
+    border: 1px solid #fff;
+}
+  
+.tooltip .ant-tooltip-inner {
+    font-size: 12px;
+    border-radius: 0;
+}
+  
+div[data-command="toBack"], div[data-command="toFront"] {
+    font-size: 18px;
+}
+
+.icon {
+    width: 1em;
+    height: 1em;
+    vertical-align: -0.15em;
+    fill: currentColor;
+    overflow: hidden;
+}
+
+.vtk-page {
+    width: 100%;
+    height: 100vh;
+    /* background: #fff; */
+}
+
+.vtk-panel {
+    height: 100%;
+    border-right: 1px solid #ccc;
+    padding: 20px;
+    width: 240px;
+    overflow: hidden;
+}
+
+.vtk-view {
+    height: calc(100vh - 64px);
+    width: calc(100% - 240px);
+    background: transparent;
+}
+
+.ant-menu-submenu>.ant-menu {
+    background-color: #E8E8E8;
+    border-radius: 4px;
+}
+
+canvas {
+    background: rgba(255, 255, 255, 0);
+    /*关键点*/
+}
+
+.ant-select-selection--multiple {
+    max-height: 32px;
+    overflow: hidden;
+}
+/* Define css class for global loading message to cover 
+   screen during axios operations */
+#loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.75);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    font-size: 20px;
+}
+.textCanvas{
+    position: absolute;
+    top:0;
+}
