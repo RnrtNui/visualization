@@ -1,11 +1,12 @@
 #前端部分：
 ##作者：
     鲁杨飞
+    
 ##概述：
     visualization可视化项目下包含数据可视化（DataVClient），模型可视化（VTKClient）:<br>
     VTKClient（模型可视化）基于vtk.js实现的前端可视化项目，支持多种模型数据文件格式，进行数据模型及结果进行渲染;<br>
     DataVClient （数据可视化）采用百度echarts、百度地图API等实现各种二维和三维图表、词云图、热力图等,实现数据可视化。
-    ##运行指南：
+##运行指南：
 ###VTKClient: 
     1、进入VTKClient目录打开控制台通过　npm install 安装依赖包;<br>
     2、通过 npm run dev  启动项目。
