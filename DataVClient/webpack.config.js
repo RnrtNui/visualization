@@ -42,6 +42,7 @@ module.exports = {
             errors: true
         },
         publicPath: "/",
+        //代理设置
         proxy: {
             "/data": {
                 target: "http://192.168.2.134:8002",

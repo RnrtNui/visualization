@@ -330,12 +330,10 @@ export default class flaviaView extends Component {
                 mapper1.setInputData(polydata1);
                 mapper1.setScalarRange(min, max)
                 //更新色标卡
-                if (this.container1.current.childElementCount < 1){
-                    scalarBar(model, unique, modes, this.container1);
-                }else{
+                if (this.container1.current.childElementCount >=1){
                     this.container1.current.innerHTML=null;
-                    scalarBar(model, unique, modes, this.container1);
                 }
+                scalarBar(model, unique, modes, this.container1);
                 model.lookupTable = lut1;
                 //设置透明度
                 actor1.getProperty().setOpacity(inputValue);
@@ -388,6 +386,7 @@ export default class flaviaView extends Component {
             if (document.getElementsByTagName("canvas").length > 0) {
             }
         }
+        console.log(scale)
         return (
             <div>
                 <Draggable handle=".handle"
