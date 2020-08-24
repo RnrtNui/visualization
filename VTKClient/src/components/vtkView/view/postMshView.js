@@ -1,3 +1,9 @@
+/**
+* 文件名：postMshView.js
+* 作者：鲁杨飞
+* 创建时间：2020/8/24
+* 文件描述：*.post.msh类型数据文件渲染逻辑。
+* */
 import vtk from 'vtk.js/Sources/vtk';
 import Draggable from 'react-draggable';
 import React, { Component } from 'react';
@@ -18,14 +24,38 @@ export default class mshView extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            data: [], activeScalar: [], model: {}, canvas: {}, ResData: [],
-            boxBgColor: "#ccc", value: 0, resultName: null, ArrowSize: 1,
-            min: null, max: null, cancle: [],
-            displayBox: "none", scalarBar: 0, mode: "Cool to Warm", scale: [], unique: [],
-            inputValue: 1, points: [], cells: [], pointData: 0, actors: [],
-            Material: [], checkedList: [], indeterminate: true,
-            checkAll: false, resultList: [], checkedResList: [],
-            resClass: 0, resId: 0, vector: false, vectorData: []
+            data: [],
+            activeScalar: [],
+            model: {},
+            canvas: {},
+            ResData: [],
+            boxBgColor: "#ccc",
+            value: 0,
+            resultName: null,
+            ArrowSize: 1,
+            min: null,
+            max: null,
+            cancle: [],
+            displayBox: "none",
+            scalarBar: 0,
+            mode: "Cool to Warm",
+            unique: [],
+            inputValue: 1,
+            points: [],
+            cells: [],
+            pointData: 0,
+            actors: [],
+            Material: [],
+            checkedList: [],
+            indeterminate: true,
+            checkAll: false,
+            resultList: [],
+            checkedResList: [],
+            resClass: 0,
+            resId: 0,
+            vector: false,
+            vectorData: [],
+            OpenGlRW: {}
         }
         this.container = React.createRef();
         this.container1 = React.createRef();
@@ -42,6 +72,7 @@ export default class mshView extends Component {
         if (data.type === ".post.msh") {
             //创建渲染场景
             Rendering(model, this.container);
+            let OpenGlRW = model.fullScreenRenderer.getOpenGLRenderWindow();
             let polydata = {};
             let points = [];
             points = JSON.parse(JSON.stringify(data.data.StrCoord));
@@ -75,7 +106,6 @@ export default class mshView extends Component {
                 }
             }
             let ResData = {}, resultList = [], checkedResList = [], vectorData = [];
-
             if (data.data.ResData) {
                 for (var key1 in data.data.ResData) {　　//遍历对象的所有属性，包括原型链上的所有属性
                     if (data.data.ResData.hasOwnProperty(key1)) { //判断是否是对象自身的属性，而不包含继承自原型链上的属性
@@ -129,7 +159,8 @@ export default class mshView extends Component {
                 min: min,
                 max: max,
                 unique: unique,
-                actors: actors
+                actors: actors,
+                OpenGlRW: OpenGlRW
             })
             polydata = vtk({
                 vtkClass: 'vtkPolyData',
@@ -197,6 +228,7 @@ export default class mshView extends Component {
             inputValue: value,
         });
     };
+
     //更新组件
     componentDidUpdate = (prevProps) => {
         let { useScreen } = this.props
@@ -238,6 +270,7 @@ export default class mshView extends Component {
             cancle: cancal
         })
     };
+
     //选择显示结果类型
     onChangeResClassname = (value) => {
         let { data } = this.props;
@@ -330,87 +363,103 @@ export default class mshView extends Component {
 
     render() {
         let {
-            boxBgColor, Material, displayBox, vector, ArrowSize, vectorData, ResData, min, max, cancle,
-            model, activeScalar, mode, scale, unique, points, cells, pointData, checkedResList, actors
+            boxBgColor, Material, displayBox, vector, ArrowSize, vectorData, ResData, min, max, cancle, model, activeScalar, mode, unique, points, cells, pointData, checkedResList, actors, OpenGlRW
         } = this.state;
-        let { display, displayBar, keydown, useAxis, opt, Scalar, useScreen, useLight, bounds, show } = this.props;
+        let {
+            display, displayBar, keydown, useAxis, opt, Scalar, useScreen, useLight, bounds, show
+        } = this.props;
         let inputValue = this.state.inputValue;
+        let scale = [];
+        let modes = mode;
+        let num = Math.round(unique.length / 3);
+        activeScalar = [unique[unique.length - 1], unique[unique.length - 1 - num], unique[num], unique[0]];
+        scale = [(unique.length * 100) / unique.length + "%", ((unique.length - num) * 100) / unique.length + "%", (num * 100) / unique.length + "%", 0 + "%"];
+        if (document.querySelector(".scalarMax")) document.querySelector(".scalarMax").innerHTML = max;
+        if (document.querySelector(".scalarMin")) document.querySelector(".scalarMin").innerHTML = min;
+        if (document.querySelector(".vtk-container1")) {
+            document.querySelector(".vtk-container1").style.display = "block";
+        }
+        const lut1 = vtkColorTransferFunction.newInstance();
+        const preset = vtkColorMaps.getPresetByName(modes);   //预设色标颜色样式
+        lut1.applyColorMap(preset);  //应用ColorMap
+        lut1.updateRange();
+        let polydata1 = {
+            vtkClass: 'vtkPolyData',
+            "points": {
+                vtkClass: 'vtkPoints',
+                dataType: 'Float32Array',
+                numberOfComponents: 3,
+                values: points,
+            },
+            "polys": {
+                vtkClass: 'vtkCellArray',
+                dataType: 'Float32Array',
+                values: cells,
+            },
+            "pointData": {
+                vtkClass: 'vtkDataSetAttributes',
+                activeScalars: 0,
+                activeVectors: 1,
+                arrays: [{
+                    data: {
+                        vtkClass: 'vtkDataArray',
+                        name: 'pointScalars',
+                        dataType: 'Float32Array',
+                        values: ResData[pointData],
+                    },
+                }],
+            }
+        };
+        let polydata2 = {
+            vtkClass: 'vtkPolyData',
+            points: {
+                vtkClass: 'vtkPoints',
+                dataType: 'Float32Array',
+                numberOfComponents: 3,
+                values: points,
+            },
+            polys: {
+                vtkClass: 'vtkCellArray',
+                dataType: 'Float32Array',
+                values: cells,
+            },
+        };
+        if(OpenGlRW.initialize) gl(OpenGlRW);
+
         //是否显示结果
         if (Scalar === true) {
-            let modes = mode;
-            let num = Math.round(unique.length / 3)
-            activeScalar = [unique[unique.length - 1], unique[unique.length - 1 - num], unique[num], unique[0]];
-            scale = [(unique.length * 100) / unique.length + "%", ((unique.length - num) * 100) / unique.length + "%", (num * 100) / unique.length + "%", 0 + "%"];
-            if (document.querySelector(".scalarMax")) document.querySelector(".scalarMax").innerHTML = max;
-            if (document.querySelector(".scalarMin")) document.querySelector(".scalarMin").innerHTML = min;
-            if (document.querySelector(".vtk-container1")) {
-                document.querySelector(".vtk-container1").style.display = "block";
-            }
             if (model.renderer) {
                 for (let key in actors) {
                     if (actors.hasOwnProperty(key)) {
                         model.renderer.removeActor(actors[key]);
                     }
                 };
-                let OpenGlRW = this.state.model.fullScreenRenderer.getOpenGLRenderWindow();
-                gl(OpenGlRW);
-                let polydata1 = vtk({
-                    vtkClass: 'vtkPolyData',
-                    points: {
-                        vtkClass: 'vtkPoints',
-                        dataType: 'Float32Array',
-                        numberOfComponents: 3,
-                        values: points,
-                    },
-                    polys: {
-                        vtkClass: 'vtkCellArray',
-                        dataType: 'Float32Array',
-                        values: cells,
-                    },
-                    pointData: {
-                        vtkClass: 'vtkDataSetAttributes',
-                        activeScalars: 0,
-                        activeVectors: 1,
-                        arrays: [{
-                            data: {
-                                vtkClass: 'vtkDataArray',
-                                name: 'pointScalars',
-                                dataType: 'Float32Array',
-                                values: ResData[pointData],
-                            },
-                        }],
-                    }
-                });
                 if (document.querySelector('.textCanvas')) this.container.current.children[0].removeChild(document.querySelector('.textCanvas'))
                 model.renderer.removeActor(model.bounds);
-                showBounds(bounds, model, this.container, polydata1); //边框
-                const lut1 = vtkColorTransferFunction.newInstance();
-                const preset = vtkColorMaps.getPresetByName(modes);   //预设色标颜色样式
-                lut1.applyColorMap(preset);  //应用ColorMap
-                lut1.updateRange();
-                showVector(vector, model, points, vectorData, lut1, min, max,ArrowSize); //矢量
+                showBounds(bounds, model, this.container, vtk(polydata1)); //边框
+                showVector(vector, model, points, vectorData, lut1, min, max, ArrowSize); //矢量
                 const mapper1 = vtkMapper.newInstance({
                     interpolateScalarsBeforeMapping: true
                 });
                 const actor1 = vtkActor.newInstance();
                 mapper1.setLookupTable(lut1);
-                mapper1.setInputData(polydata1);
+                mapper1.setInputData(vtk(polydata1));
                 mapper1.setScalarRange(min, max);
                 let scalarBox = document.getElementsByClassName('vtk-container1')[0];
                 if (scalarBox) {
                     scalarBox.innerHTML = null;
                 }
-                if (this.container1.current.childElementCount < 1) {
-                    scalarBar(model, unique, modes, this.container1);
+                if (this.container1.current.childElementCount >= 1) {
+                    this.container1.current.innerHTML = null;
                 }
-                model.lookupTable = lut1;
-                actor1.getProperty().setOpacity(inputValue);
+                scalarBar(model, unique, modes, this.container1);
                 actor1.setMapper(mapper1);
                 model.renderer.removeActor(model.actor);
                 model.actor = actor1;
                 model.renderer.addActor(actor1);
             };
         } else if (Scalar === false) {
+            displayBar = 0;
             if (model.renderer) {
                 if (document.querySelector(".vtk-container1")) {
                     document.querySelector(".vtk-container1").style.display = 'none';
@@ -425,23 +474,9 @@ export default class mshView extends Component {
                         }
                     }
                 }
-                let polydata2 = vtk({
-                    vtkClass: 'vtkPolyData',
-                    points: {
-                        vtkClass: 'vtkPoints',
-                        dataType: 'Float32Array',
-                        numberOfComponents: 3,
-                        values: points,
-                    },
-                    polys: {
-                        vtkClass: 'vtkCellArray',
-                        dataType: 'Float32Array',
-                        values: cells,
-                    },
-                });
                 if (document.querySelector('.textCanvas')) this.container.current.children[0].removeChild(document.querySelector('.textCanvas'))
                 model.renderer.removeActor(model.bounds);
-                showBounds(bounds, model, this.container, polydata2); //边框
+                showBounds(bounds, model, this.container, vtk(polydata2)); //边框
 
                 const openGLRenderWindow = model.interactor.getView();
                 const hardwareSelector = vtkOpenGLHardwareSelector.newInstance({
@@ -519,7 +554,6 @@ export default class mshView extends Component {
                 function throttle(callback, delay) {
                     let isThrottled = false;
                     let argsToUse = null;
-
                     function next() {
                         isThrottled = false;
                         if (argsToUse !== null) {
@@ -527,7 +561,6 @@ export default class mshView extends Component {
                             argsToUse = null;
                         }
                     }
-
                     function wrapper(...args) {
                         if (isThrottled) {
                             argsToUse = args;
@@ -537,18 +570,16 @@ export default class mshView extends Component {
                         callback(...args);
                         setTimeout(next, delay);
                     }
-
                     return wrapper;
                 }
                 const throttleMouseHandler = throttle(pickOnMouseEvent, 100);
                 document.addEventListener('mousemove', throttleMouseHandler);
             }
         }
-
         displayBox = display;
 
         //改变显示样式
-        changeManipulators(model, opt, keydown, useLight, useAxis);
+        if (model.renderer) changeManipulators(model, opt, keydown, useLight, useAxis, unique, modes, this.container1, lut1, inputValue, polydata1, polydata2, min, max, Scalar);
 
         //截屏
         if (useScreen !== null) {
@@ -611,7 +642,7 @@ export default class mshView extends Component {
                                         />
                                     </Col>
                                 </Row>
-                                <hr/>
+                                <hr />
                                 <Row><span>Material</span></Row>
                                 <Row>
                                     {

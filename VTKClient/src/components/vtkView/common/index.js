@@ -1,3 +1,9 @@
+/**
+* 文件名：/common/index.js
+* 作者：鲁杨飞
+* 创建时间：2020/8/24
+* 文件描述：模型渲染公共方法。
+* */
 import vtk from 'vtk.js/Sources/vtk';
 import React from "react";
 import { Spin } from "antd";
@@ -327,8 +333,7 @@ export const reassignManipulators = (model) => {
 };
 
 //改变显示模式
-export const changeManipulators = (model, opt, keydown, useLight, useAxis) => {
-
+export const changeManipulators = (model, opt, keydown, useLight, useAxis, scalar, mode, container1, lut, inputValue, polydata1, polydata2, min, max, Scalar) => {
     //显示实体单元、网格或点
     if (keydown === "R") {
         if (model.renderer) {
@@ -360,6 +365,23 @@ export const changeManipulators = (model, opt, keydown, useLight, useAxis) => {
             model.renderWindow.render();
         }
     };
+    console.log(Scalar)
+    if (Scalar === true || Scalar === null) {
+        if (container1.current.childElementCount >= 1) {
+            container1.current.innerHTML = null;
+            scalarBar(model, scalar, mode, container1);
+
+        } else {
+            scalarBar(model, scalar, mode, container1);
+        }
+        model.actor.getMapper().setLookupTable(lut);
+        model.actor.getMapper().setInputData(vtk(polydata1));
+        model.actor.getMapper().setScalarRange(min, max);
+        model.actor.getProperty().setOpacity(inputValue);
+    } else if(Scalar === false){
+        model.actor.getMapper().setInputData(vtk(polydata2));
+        model.actor.getProperty().setOpacity(inputValue);
+    }
 
     //光照
     if (useLight) {
@@ -395,8 +417,8 @@ export const changeManipulators = (model, opt, keydown, useLight, useAxis) => {
     }
 
     //显示坐标系
-    if (model.fullScreenRenderer) {
-        if (useAxis) {
+    if (model.fullScreenRenderer&&useAxis) {
+        if (useAxis===true) {
             model.orientationWidget.setEnabled(true);
             model.renderWindow.render();
         } else {
@@ -473,8 +495,10 @@ export const showBounds = (bounds, model, container, polydata) => {
         model.renderer.addActor(textActor);
         model.renderer.addActor(actor);
     } else {
-        if (document.querySelector('.textCanvas')) container.current.children[0].removeChild(document.querySelector('.textCanvas'))
-        model.renderer.removeActor(model.bounds);
+        if (document.querySelector('.textCanvas')) {
+            container.current.children[0].removeChild(document.querySelector('.textCanvas'))
+            model.renderer.removeActor(model.bounds);
+        }
     }
 }
 //显示矢量

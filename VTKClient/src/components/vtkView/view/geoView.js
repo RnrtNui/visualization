@@ -1,3 +1,9 @@
+/**
+* 文件名：geoView.js
+* 作者：鲁杨飞
+* 创建时间：2020/8/24
+* 文件描述：钻孔数据渲染逻辑。
+* */
 import axios from 'axios'
 import { goUrl } from '../../../url';
 import { Input, Button } from "antd";

@@ -1,4 +1,9 @@
-//极坐标系下的堆叠柱状图
+/**
+* 文件名：/component/DateView2.js
+* 作者：鲁杨飞
+* 创建时间：2020/8/24
+* 文件描述：极坐标系下的堆叠柱状图示例。
+* */
 import React, { Component } from 'react';
 import echarts from 'echarts';
 import chinaData from 'echarts/map/json/china.json'
@@ -21,7 +26,6 @@ class DateView extends Component {
 		bar:柱状条形图，
 		scatter:散点（气泡）图,
 		effectScatter:带有涟漪特效动画的散点（气泡）图,
-
 		*/
 		// 获取数据
 		var myChart1 = echarts.init(document.getElementById('main'));

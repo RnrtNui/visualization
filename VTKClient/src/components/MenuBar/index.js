@@ -1,7 +1,14 @@
-// 顶部菜单栏部分
+/**
+* 文件名：/MenuBar/index.js
+* 作者：鲁杨飞
+* 创建时间：2020/8/24
+* 文件描述：顶部菜单栏部分。
+* */
 import React from 'react';
 import { Layout, Tooltip } from "antd";
-import IconFont from '../IconFont';
+import '../../assets/IconFont/iconfont.css';
+import '../../index.css';
+
 // import html2canvas from 'html2canvas';
 const { Header } = Layout;
 
@@ -184,95 +191,95 @@ export default class MenuBar extends React.Component {
       <Header className="header" role="navigation" style={this.props.style}>
         <div className='command'>
           <Tooltip title='复位' placement="bottom" onClick={this.keyDownR}>
-            <IconFont type="iconfuwei" />
+            <i className="iconfont iconfuwei" type="iconfuwei" />
           </Tooltip>
         </div>
         <div className='commands'></div>
         <div className='command'>
           <Tooltip title='3D旋转' placement="bottom" onClick={this.onButtonRotate}>
-            <IconFont type="iconDxuanzhuan" />
+            <i className="iconfont iconDxuanzhuan" type="iconDxuanzhuan" />
           </Tooltip>
         </div>
         <div className='command'>
           <Tooltip title='轴旋转' placement="bottom" onClick={this.onButtonRoll}>
-            <IconFont type="iconweiraogoujianxuanzhuan" />
+            <i className="iconfont iconweiraogoujianxuanzhuan" type="iconweiraogoujianxuanzhuan" />
           </Tooltip>
         </div>
         <div className='command'>
           <Tooltip title='拖动' placement="bottom" onClick={this.onButtonPan}>
-            <IconFont type="iconmove" />
+            <i className="iconfont iconmove" type="iconmove" />
           </Tooltip>
         </div>
         {/* <div className='commands'></div>
         <div className='command'>
           <Tooltip title='缩放' placement="bottom" onClick={this.onButtonZoom}>
-            <IconFont type="iconiconset0442" />
+            <i className="iconfont " type="iconiconset0442" />
           </Tooltip>
         </div> */}
 
         <div className='commands'></div>
         <div className='command'>
           <Tooltip title='显示为实体单元' placement="bottom" onClick={this.keyDownS}>
-            <IconFont type="iconcubelifangti" />
+            <i className="iconfont iconcubelifangti" type="iconcubelifangti" />
           </Tooltip>
         </div>
         <div className='command'>
           <Tooltip title='显示为网格' placement="bottom" onClick={this.keyDownW}>
-            <IconFont type="iconplus-gridview" />
+            <i className="iconfont iconplus-gridview" type="iconplus-gridview" />
           </Tooltip>
         </div>
         <div className='command'>
           <Tooltip title='显示所有点' placement="bottom" onClick={this.keyDownV}>
-            <IconFont type="icondianxian" />
+            <i className="iconfont icondianxian" type="icondianxian" />
           </Tooltip>
         </div>
         <div className='commands'></div>
         <div className='command'>
           <Tooltip title='坐标定位' placement="bottom" onClick={this.changeAxis}>
-            <IconFont type="iconsanweizuobiao" />
+            <i className="iconfont iconsanweizuobiao" type="iconsanweizuobiao" />
           </Tooltip>
         </div>
         <div className='command'>
           <Tooltip title='显示边框' placement="bottom" onClick={this.setBounds}>
-            <IconFont type="iconicon-lifangti" />
+            <i className="iconfont iconicon-lifangti" type="iconicon-lifangti" />
           </Tooltip>
         </div>
         {/* <div className='commands'></div>
         <div className='command'>
           <Tooltip title='点拾取（鼠标右击）' placement="bottom" onClick={this.usePointPicker}>
-            <IconFont type="icondian" />
+            <i className="iconfont " type="icondian" />
           </Tooltip>
         </div>
         <div className='command'>
           <Tooltip title='单元拾取（鼠标右击）' placement="bottom" onClick={this.useCellPicker}>
-            <IconFont type="iconcell" />
+            <i className="iconfont " type="iconcell" />
           </Tooltip>
         </div> */}
         <div className='commands'></div>
         <div className='command'>
           <Tooltip title='色标卡' placement="bottom" onClick={this.settingBar}>
-            <IconFont type="iconyanse" />
+            <i className="iconfont iconyanse" type="iconyanse" />
           </Tooltip>
         </div>
         <div className='command'>
           <Tooltip title='数据结果显示' placement="bottom" onClick={this.settingScalsr}>
-            <IconFont type="iconshujujieguotongji" />
+            <i className="iconfont iconshujujieguotongji" type="iconshujujieguotongji" />
           </Tooltip>
         </div>
         <div className='command'>
           <Tooltip title='灯光' placement="bottom" onClick={this.settingLight}>
-            <IconFont type="iconlightbulb-on" />
+            <i className="iconfont iconlightbulb-on" type="iconlightbulb-on" />
           </Tooltip>
         </div>
         <div className='commands'></div>
         <div className='command'>
           <Tooltip title='截屏' placement="bottom" onClick={this.Screen}>
-            <IconFont type="iconjieping" />
+            <i className="iconfont iconjieping" type="iconjieping" />
           </Tooltip>
         </div>
         <div className='command'>
           <Tooltip title='设置属性' placement="bottom" onClick={this.setting}>
-            <IconFont type="iconset" />
+            <i className="iconfont iconset" type="iconset" />
           </Tooltip>
         </div>
       </Header>

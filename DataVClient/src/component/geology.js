@@ -1,4 +1,9 @@
-//柱状图
+/**
+* 文件名：/component/geology.js
+* 作者：鲁杨飞
+* 创建时间：2020/8/24
+* 文件描述：钻孔柱状图示例。
+* */
 import React, { Component } from 'react';
 import echarts from 'echarts';
 import chinaData from 'echarts/map/json/china.json';

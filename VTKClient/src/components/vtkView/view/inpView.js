@@ -1,3 +1,9 @@
+/**
+* 文件名：inpView.js
+* 作者：鲁杨飞
+* 创建时间：2020/8/24
+* 文件描述：*.inp类型数据文件渲染逻辑。
+* */
 import vtk from 'vtk.js/Sources/vtk';
 import Draggable from 'react-draggable';
 import React, { Component } from 'react';
@@ -16,11 +22,25 @@ export default class inpView extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            data: [], activeScalar: [], model: {}, canvas: {},
-            useScalar: false, boxBgColor: "#ccc", value: 0,
-            displayBox: "none", points: [], cells: [], pointData: [0, 1], min: null, max: null,
-            scalarBar: "0", mode: "rainbow", scale: [], unique: [], inputValue: 1,
+            data: [],
+            activeScalar: [],
+            model: {},
+            canvas: {},
+            useScalar: false,
+            boxBgColor: "#ccc",
+            value: 0,
+            displayBox: "none",
+            points: [],
+            cells: [],
+            pointData: [0, 1],
+            min: null,
+            max: null,
+            scalarBar: "0",
+            mode: "rainbow",
+            unique: [],
+            inputValue: 1,
             cellDataName: [],
+            OpenGlRW: {}
         }
         this.container = React.createRef();
         this.container1 = React.createRef();
@@ -37,6 +57,7 @@ export default class inpView extends Component {
         if (data.type === ".inp") {
             //准备
             Rendering(model, this.container);
+            let OpenGlRW = model.fullScreenRenderer.getOpenGLRenderWindow();
             //数据
             let points = JSON.parse(JSON.stringify(data.data.POINTS));
             let cells = JSON.parse(JSON.stringify(data.data.CELLS));
@@ -70,6 +91,7 @@ export default class inpView extends Component {
                 unique: unique,
                 cellData: cellData,
                 cellDataName: cellDataName,
+                OpenGlRW: OpenGlRW
             })
             //创建polydata
             let polydata = vtk({
@@ -232,126 +254,101 @@ export default class inpView extends Component {
 
     render() {
         let {
-            boxBgColor, displayBox, points, cells,
-            model, activeScalar, mode, scale, unique,
-            inputValue, min, max, cellData, cellDataName
+            boxBgColor, displayBox, points, cells, model, activeScalar, mode, unique, inputValue, min, max, cellData, cellDataName, OpenGlRW
         } = this.state;
         let {
-            data, display, displayBar,
-            keydown, useAxis, opt, Scalar,
-            useScreen, useLight, bounds, show
+            display, displayBar, keydown, useAxis, opt, Scalar, useScreen, useLight, bounds, show
         } = this.props;
+        let scale = [];
         let polydata1 = {};
+        let polydata2 = {
+            vtkClass: 'vtkPolyData',
+            points: {
+                vtkClass: 'vtkPoints',
+                dataType: 'Float32Array',
+                numberOfComponents: 3,
+                values: points,
+            },
+            polys: {
+                vtkClass: 'vtkCellArray',
+                dataType: "Float32Array",
+                values: cells,
+            },
+        };
         //是否显示结果
-        if (Scalar === true) {
-            let modes = mode;
-            let num = Math.round(unique.length / 3)
-            activeScalar = [unique[unique.length - 1], unique[unique.length - 1 - num], unique[num], unique[0]];
-            scale = [(unique.length * 100) / unique.length + "%", ((unique.length - num) * 100) / unique.length + "%", (num * 100) / unique.length + "%", 0 + "%"]
-            if (document.querySelector(".scalarMax")) document.querySelector(".scalarMax").innerHTML = max;
-            if (document.querySelector(".scalarMin")) document.querySelector(".scalarMin").innerHTML = min;
-            if (document.querySelector(".vtk-container1")) {
-                document.querySelector(".vtk-container1").style.display = "block";
-            }
-            if (model.fullScreenRenderer) {
-                let OpenGlRW = this.state.model.fullScreenRenderer.getOpenGLRenderWindow();
-                gl(OpenGlRW);
-                polydata1 = vtk({
-                    vtkClass: 'vtkPolyData',
-                    points: {
-                        vtkClass: 'vtkPoints',
-                        dataType: 'Float32Array',
-                        numberOfComponents: 3,
-                        values: points,
-                    },
-                    polys: {
-                        vtkClass: 'vtkCellArray',
-                        dataType: "Float32Array",
-                        values: cells,
-                    },
-                    cellData: {
-                        vtkClass: 'vtkDataSetAttributes',
-                        activeScalars: 0,
-                        arrays: [{
-                            data: {
-                                vtkClass: 'vtkDataArray',
-                                name: 'pointScalars',
-                                dataType: 'Float32Array',
-                                values: cellData[cellDataName[0]],
-                            },
-                        }],
-                    }
-                });
-
-                if (document.querySelector('.textCanvas')) this.container.current.children[0].removeChild(document.querySelector('.textCanvas'))
-                model.renderer.removeActor(model.bounds);
-                showBounds(bounds, model, this.container, polydata1); //边框
-                const lut1 = vtkColorTransferFunction.newInstance();
-                const preset = vtkColorMaps.getPresetByName(modes);   //预设色标颜色样式
-                lut1.applyColorMap(preset);  //应用ColorMap
-                lut1.updateRange();
-                const mapper1 = vtkMapper.newInstance({
-                    interpolateScalarsBeforeMapping: true
-                });
-                const actor1 = vtkActor.newInstance();
-                mapper1.setLookupTable(lut1);
-                mapper1.setInputData(polydata1);
-                mapper1.setScalarRange(min, max)
-                if (this.container1.current.childElementCount < 1){
-                    scalarBar(model, unique, modes, this.container1);
-                }else{
-                    this.container1.current.innerHTML=null;
-                    scalarBar(model, unique, modes, this.container1);
-                }
-                model.lookupTable = lut1;
-                actor1.getProperty().setOpacity(inputValue);
-                actor1.setMapper(mapper1);
-                model.renderer.removeActor(model.actor);
-                model.actor = actor1
-                model.mapper = mapper1;
-                model.renderer.addActor(actor1);
-            }
-        } else if (Scalar === false) {
-            if (model.renderer) {
-                if (document.querySelector(".vtk-container1")) {
-                    document.querySelector(".vtk-container1").style.display = 'none';
-                }
-                polydata1 = vtk({
-                    vtkClass: 'vtkPolyData',
-                    points: {
-                        vtkClass: 'vtkPoints',
-                        dataType: 'Float32Array',
-                        numberOfComponents: 3,
-                        values: data.data.POINTS,
-                    },
-                    polys: {
-                        vtkClass: 'vtkCellArray',
-                        dataType: "Float32Array",
-                        values: data.data.CELLS,
-                    },
-                });
-                if (document.querySelector('.textCanvas')) this.container.current.children[0].removeChild(document.querySelector('.textCanvas'))
-                model.renderer.removeActor(model.bounds);
-                const mapper2 = vtkMapper.newInstance({
-                    interpolateScalarsBeforeMapping: true
-                });
-                mapper2.setInputData(polydata1);
-                showBounds(bounds, model, this.container, polydata1); //边框
-                const actor2 = vtkActor.newInstance();
-                actor2.setMapper(mapper2);
-                actor2.getProperty().setOpacity(inputValue);
-                model.renderer.removeActor(model.actor);
-                model.actor = actor2;
-                model.mapper = mapper2;
-                model.renderer.addActor(actor2);
-
-            }
+        let modes = mode;
+        let num = Math.round(unique.length / 3)
+        activeScalar = [unique[unique.length - 1], unique[unique.length - 1 - num], unique[num], unique[0]];
+        scale = [(unique.length * 100) / unique.length + "%", ((unique.length - num) * 100) / unique.length + "%", (num * 100) / unique.length + "%", 0 + "%"]
+        if (document.querySelector(".scalarMax")) document.querySelector(".scalarMax").innerHTML = max;
+        if (document.querySelector(".scalarMin")) document.querySelector(".scalarMin").innerHTML = min;
+        if (document.querySelector(".vtk-container1")) {
+            document.querySelector(".vtk-container1").style.display = "block";
         }
+        const lut1 = vtkColorTransferFunction.newInstance();
+        const preset = vtkColorMaps.getPresetByName(modes);   //预设色标颜色样式
+        lut1.applyColorMap(preset);  //应用ColorMap
+        lut1.updateRange();
+        if (OpenGlRW.initialize) gl(OpenGlRW);
+        if (model.fullScreenRenderer) {
+            let OpenGlRW = this.state.model.fullScreenRenderer.getOpenGLRenderWindow();
+            gl(OpenGlRW);
+            polydata1 = {
+                vtkClass: 'vtkPolyData',
+                points: {
+                    vtkClass: 'vtkPoints',
+                    dataType: 'Float32Array',
+                    numberOfComponents: 3,
+                    values: points,
+                },
+                polys: {
+                    vtkClass: 'vtkCellArray',
+                    dataType: "Float32Array",
+                    values: cells,
+                },
+                cellData: {
+                    vtkClass: 'vtkDataSetAttributes',
+                    activeScalars: 0,
+                    arrays: [{
+                        data: {
+                            vtkClass: 'vtkDataArray',
+                            name: 'pointScalars',
+                            dataType: 'Float32Array',
+                            values: cellData[cellDataName[0]],
+                        },
+                    }],
+                }
+            };
 
+            if (document.querySelector('.textCanvas')) this.container.current.children[0].removeChild(document.querySelector('.textCanvas'))
+            model.renderer.removeActor(model.bounds);
+            showBounds(bounds, model, this.container, vtk(polydata1)); //边框
+
+            const mapper1 = vtkMapper.newInstance({
+                interpolateScalarsBeforeMapping: true
+            });
+            const actor1 = vtkActor.newInstance();
+            mapper1.setLookupTable(lut1);
+            mapper1.setInputData(vtk(polydata1));
+            mapper1.setScalarRange(min, max)
+            //更新色标卡
+            if (this.container1.current.childElementCount >= 1) {
+                this.container1.current.innerHTML = null;
+            }
+            scalarBar(model, unique, modes, this.container1);
+            model.lookupTable = lut1;
+            actor1.getProperty().setOpacity(inputValue);
+            actor1.setMapper(mapper1);
+            model.renderer.removeActor(model.actor);
+            model.actor = actor1
+            model.mapper = mapper1;
+            model.renderer.addActor(actor1);
+        }
+        if (Scalar === false) displayBar = 0;
         displayBox = display;
 
-        //改变显示样式
-        changeManipulators(model, opt, keydown, useLight, useAxis);
+        //改变显示样式        
+        if (model.renderer) changeManipulators(model, opt, keydown, useLight, useAxis, unique, modes, this.container1, lut1, inputValue, polydata1, polydata2, min, max, Scalar);
 
         //截屏
         if (useScreen !== null) {

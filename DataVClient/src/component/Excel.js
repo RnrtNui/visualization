@@ -1,4 +1,9 @@
-//echarts 图表
+/**
+* 文件名：/component/Excel.js
+* 作者：鲁杨飞
+* 创建时间：2020/8/24
+* 文件描述：获取excel数据显示echarts 图表示例。
+* */
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 import { Spin } from "antd";
