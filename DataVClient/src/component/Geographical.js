@@ -1,9 +1,9 @@
 /**
-* 文件名：/component/Geographical.js
-* 作者：鲁杨飞
-* 创建时间：2020/8/24
-* 文件描述：echarts 热力图示例。
-* */
+ 文件名：/component/Geographical.js
+ 作者：鲁杨飞
+ 创建时间：2020/8/24
+ 文件描述：echarts 热力图示例。
+ */
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 import { Spin } from "antd";

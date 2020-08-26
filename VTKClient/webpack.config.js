@@ -34,7 +34,7 @@ module.exports = {
         host: '192.168.2.134',
         useLocalIp: true,
         watchContentBase: true,
-        disableHostCheck:true,
+        disableHostCheck: true,
         watchOptions: {
             poll: true
         },
@@ -56,7 +56,7 @@ module.exports = {
         historyApiFallback: {
             rewrites: [
                 { from: /./, to: 'index.html' }
-              ]
+            ]
         },//不跳转，用于开发单页面应用，依赖于HTML5 history API 设置为true点击链接还是指向index.html
     },
 

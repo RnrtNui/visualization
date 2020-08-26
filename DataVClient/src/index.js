@@ -1,9 +1,9 @@
 /**
-* 文件名：/src/index.js
-* 作者：鲁杨飞
-* 创建时间：2020/8/24
-* 文件描述：项目入口文件，通过路由显示页面。
-* */
+ 文件名：/src/index.js
+ 作者：鲁杨飞
+ 创建时间：2020/8/24
+ 文件描述：项目入口文件，通过路由显示页面。
+ */
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';

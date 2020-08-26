@@ -97,14 +97,15 @@ div[data-command="toBack"], div[data-command="toFront"] {
     background: transparent;
 }
 
+.visual-view {
+    height: calc(100vh - 64px);
+    width: 100%;
+    background: transparent;
+}
+
 .ant-menu-submenu>.ant-menu {
     background-color: #E8E8E8;
     border-radius: 4px;
-}
-
-canvas {
-    background: rgba(201, 195, 195, 1);
-    /*关键点*/
 }
 
 .ant-select-selection--multiple {

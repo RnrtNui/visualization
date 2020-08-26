@@ -1,9 +1,9 @@
 /**
-* 文件名：vtkView.js
-* 作者：鲁杨飞
-* 创建时间：2020/8/24
-* 文件描述：*.vtk类型数据文件渲染逻辑。
-* */
+ 文件名：vtkView.js
+ 作者：鲁杨飞
+ 创建时间：2020/8/24
+ 文件描述：*.vtk类型数据文件渲染逻辑。
+ */
 import vtk from 'vtk.js/Sources/vtk';
 import Draggable from 'react-draggable';
 import React, { Component } from 'react';

@@ -1,9 +1,9 @@
 /**
-* 文件名：offView.js
-* 作者：鲁杨飞
-* 创建时间：2020/8/24
-* 文件描述：*.off类型数据文件渲染逻辑。
-* */
+ 文件名：offView.js
+ 作者：鲁杨飞
+ 创建时间：2020/8/24
+ 文件描述：*.off类型数据文件渲染逻辑。
+ */
 import vtk from 'vtk.js/Sources/vtk';
 import Draggable from 'react-draggable';
 import React, { Component } from 'react';
@@ -22,7 +22,7 @@ export default class offView extends Component {
             useScalar: false, boxBgColor: "#ccc", value: 0,
             displayBox: "none", points: [], cells: [], pointData: [0, 1], min: null, max: null,
             scalarBar: "0", mode: "rainbow", scale: [], unique: [], inputValue: 1,
-            cellDataName: [], vector: false, ArrowSize: 1, vectorData: [],
+            cellDataName: [], vector: false, ArrowSize: 1, vectorData: [], OpenGlRW: {}
         }
         this.container = React.createRef();
         this.container1 = React.createRef();
@@ -32,7 +32,6 @@ export default class offView extends Component {
     result = () => {
         let { data } = this.props;
         let { model } = this.state;
-        console.log(data);
         let vtkBox = document.getElementsByClassName('vtk-container')[0];
         if (vtkBox) {
             vtkBox.innerHTML = null;
@@ -40,6 +39,7 @@ export default class offView extends Component {
         if (data.type === ".off") {
             //创建场景
             Rendering(model, this.container);
+            let OpenGlRW = model.fullScreenRenderer.getOpenGLRenderWindow();
             let points = JSON.parse(JSON.stringify(data.data.POINTS)); //点
             let cells = JSON.parse(JSON.stringify(data.data.CELLS));   //单元
             let polydata = vtk({
@@ -68,6 +68,9 @@ export default class offView extends Component {
             model.interactorStyle.setCenterOfRotation(mapper.getCenter())
             model.camera = model.renderer.getActiveCamera()
             reassignManipulators(model);
+            this.setState({
+                OpenGlRW: OpenGlRW
+            })
         }
         model.renderer.resetCamera();
         model.renderWindow.render();
@@ -110,14 +113,11 @@ export default class offView extends Component {
     render() {
         let {
             boxBgColor, displayBox,
-            model, inputValue,
+            model, inputValue, OpenGlRW
         } = this.state;
         let { data, display, keydown, useAxis, opt, useScreen, useLight, bounds, show } = this.props;
+        if (OpenGlRW.initialize) gl(OpenGlRW);
         //是否显示结果
-        if (model.renderer) {
-            let OpenGlRW = this.state.model.fullScreenRenderer.getOpenGLRenderWindow();
-            gl(OpenGlRW);
-        }
         if (model.renderer) {
             let polydata2 = vtk({
                 vtkClass: 'vtkPolyData',
@@ -133,9 +133,6 @@ export default class offView extends Component {
                     values: data.data.CELLS,
                 },
             });
-            if (document.querySelector('.textCanvas')) this.container.current.children[0].removeChild(document.querySelector('.textCanvas'))
-            model.renderer.removeActor(model.bounds);
-            showBounds(bounds, model, this.container, polydata2); //边框
             const mapper2 = vtkMapper.newInstance({
                 interpolateScalarsBeforeMapping: true
             });
@@ -147,14 +144,10 @@ export default class offView extends Component {
             model.actor = actor2;
             model.mapper = mapper2;
             model.renderer.addActor(actor2);
-
+            showBounds(bounds, model, this.container, polydata2); //边框
+            changeManipulators(model, opt, keydown, useLight, useAxis);
         }
-
         displayBox = display;
-
-        //改变显示样式
-        changeManipulators(model, opt, keydown, useLight, useAxis);
-
         //截屏
         if (useScreen !== null) {
             if (document.getElementsByTagName("canvas").length > 0) {

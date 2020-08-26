@@ -1,9 +1,9 @@
 /**
-* 文件名：axios.js
-* 作者：鲁杨飞
-* 创建时间：2020/8/24
-* 文件描述：axios请求数据时加载动画逻辑。
-* */
+ 文件名：axios.js
+ 作者：鲁杨飞
+ 创建时间：2020/8/24
+ 文件描述：axios请求数据时加载动画逻辑。
+ */
 import axios from 'axios';
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
@@ -25,7 +25,7 @@ function showLoading () {
     if (requestCount === 0) {
         var dom = document.createElement('div')
         dom.setAttribute('id', 'loading')
-        document.getElementsByClassName('vtk-view')[0].appendChild(dom)
+        document.getElementsByClassName('views')[0].appendChild(dom)
         ReactDOM.render(<Spin tip="加载中..." size="large"/>, dom)
     }
     requestCount++
@@ -35,7 +35,7 @@ function showLoading () {
 function hideLoading () {
     requestCount--
     if (requestCount === 0) {
-        document.getElementsByClassName('vtk-view')[0].removeChild(document.getElementById('loading'))
+        document.getElementsByClassName('views')[0].removeChild(document.getElementById('loading'))
     }
 }
 

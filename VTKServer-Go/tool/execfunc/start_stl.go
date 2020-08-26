@@ -27,7 +27,7 @@ func HandleStl(filePath string) (*StlData, error) {
 		if strings.Contains(line, "vertex") {
 			line1 := DeleteExtraSpace(line)
 			//判断文件中是否含有特殊字符
-			if strings.Contains(line1, "\r") {
+			if strings.Contains(line1, "\r") || strings.Contains(line1, "\n") {
 				line1 = strings.FieldsFunc(line1, Split)[0]
 			}
 			lineArr := strings.Split(line1, " ")

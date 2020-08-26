@@ -1,9 +1,9 @@
 /**
-* 文件名：/SiderBar/index.js
-* 作者：鲁杨飞
-* 创建时间：2020/8/24
-* 文件描述：侧边栏树状结构。
-* */
+ 文件名：/SiderBar/index.js
+ 作者：鲁杨飞
+ 创建时间：2020/8/24
+ 文件描述：侧边栏树状结构。
+ */
 import React from 'react';
 import { Tree, Spin } from 'antd';
 import { CarryOutOutlined } from '@ant-design/icons';

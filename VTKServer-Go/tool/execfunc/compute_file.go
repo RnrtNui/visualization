@@ -9,8 +9,12 @@ import (
 
 //ComputeTypeFile 返回前端文件内容(execFile:执行命令目录位置；filePath：数据文件目录；fileNameM：数据文件)
 func ComputeTypeFile(execFile string, filePath string, fileNameM string) string {
+
 	//文件路径
 	fileNameMsh := filepath.Join(filePath, fileNameM)
+	if IsExists(fileNameMsh) {
+		return "文件不存在,请上传数据文件"
+	}
 	beego.Debug("filenameMsh:", fileNameMsh)
 
 	switch {

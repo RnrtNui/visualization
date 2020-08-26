@@ -276,15 +276,66 @@ func CallCommand(uploadFilePath string, proName string, fileName string) string 
 	return "成功"
 }
 
+//CallCommandPro 调用c命令处理文件
+func CallCommandPro(uploadFilePath string, fileName string) string {
+	var execFile string
+	//参数
+	if strings.Contains(uploadFilePath, "\\") {
+		execFile = filepath.Join(uploadFilePath, "command")
+	} else if strings.Contains(uploadFilePath, "/") {
+		execFile = filepath.Join(uploadFilePath, "commandLinux")
+	}
+
+	filePaths := filepath.Join(uploadFilePath, "process")
+	//执行命令文件生成指定类型数据文件
+	if strings.Contains(fileName, "flavia.msh") {
+		if !strings.HasPrefix(fileName, "F") {
+			if !strings.HasPrefix(fileName, "T") {
+				newFileName := strings.Replace(fileName, ".msh", ".res", -1)
+				strNew := ComputeTypeFile(execFile, filePaths, newFileName)
+				if strings.Contains(strNew, "错误") {
+					//返数据信息
+					return "文件处理失败"
+				}
+			}
+			strs := ComputeTypeFile(execFile, filePaths, fileName)
+			if strings.Contains(strs, "错误") {
+				//返回数据信息
+				return "文件处理失败"
+			}
+		}
+	} else if strings.Contains(fileName, "flavia.res") {
+		strs := ComputeTypeFile(execFile, filePaths, fileName)
+		if strings.Contains(strs, "错误") {
+			//返回数据信息
+			return "文件处理失败"
+		}
+		newFileName := strings.Replace(fileName, ".res", ".msh", -1)
+		strNew := ComputeTypeFile(execFile, filePaths, newFileName)
+		if strings.Contains(strNew, "错误") {
+			//返回数据信息
+			return "文件处理失败"
+		}
+	} else if strings.Contains(fileName, ".msh") && len(strings.Split(fileName, ".")) == 2 {
+		if !strings.HasPrefix(fileName, "T") {
+			strs := ComputeTypeFile(execFile, filePaths, fileName)
+			if strings.Contains(strs, "错误") {
+				return "文件处理失败"
+			}
+		}
+	}
+	return "成功"
+}
+
 //DoesJSONExist 是否存在json文件
 func DoesJSONExist(uploadFilePath string, fileName string) (string, string, string) {
 	var pointJSONFile string
 	var fileType string
 	var errp error
 	nameStr := strings.Split(fileName, ".")
-	jsonFile := strings.Replace(fileName, "."+nameStr[len(nameStr)-1], ".json", -1)
+	jsonFile := fileName + ".json"
 	if !strings.Contains(fileName, ".obj") {
-		pointJSONFile = strings.Replace(fileName, "."+nameStr[len(nameStr)-1], "_POINTS.json", -1)
+		pointJSONFile = strings.Replace(fileName, "."+nameStr[len(nameStr)-1], "_"+nameStr[len(nameStr)-1]+"_POINTS.json", -1)
 	}
 	fileName1 := strings.ToLower(fileName)
 	switch {
@@ -345,6 +396,7 @@ func DoesJSONExist(uploadFilePath string, fileName string) (string, string, stri
 //IsExists 文件路径是否存在
 func IsExists(path string) bool {
 	_, err := os.Stat(path)
+	beego.Debug("1", path)
 	if err != nil {
 		return false
 	}
@@ -376,8 +428,8 @@ func IsBinary(filePath string) bool {
 //ProcessData 处理各类型数据
 func ProcessData(uploadFilePath string, proName string, fileName string, data string, pdata string) (interface{}, string, error) {
 	nameStr := strings.Split(fileName, ".")
-	jsonFile := strings.Replace(fileName, "."+nameStr[len(nameStr)-1], ".json", -1)
-	jsonPFile := strings.ReplaceAll(fileName, "."+nameStr[len(nameStr)-1], "_POINTS.json")
+	jsonFile := fileName + ".json"
+	jsonPFile := strings.ReplaceAll(fileName, "."+nameStr[len(nameStr)-1], "_"+nameStr[len(nameStr)-1]+"_POINTS.json")
 	beego.Debug("jsonFile", jsonFile, jsonPFile)
 	switch {
 	//处理csv文件数据
@@ -553,6 +605,209 @@ func ProcessData(uploadFilePath string, proName string, fileName string, data st
 		tfileRes := strings.Replace(strings.Replace(ffileName, "F", "T", -1), ".msh", ".res", -1)
 		tfilePathRes := filepath.Join(uploadFilePath, "project", proName, "dataUstr", tfileRes)
 		filePath := filepath.Join(uploadFilePath, "project", proName, "dataUstr", ffileName)
+		strArrs, err := HandleFlaviaMSH(tfilePathRes, filePathRes, filePath)
+		if !strings.Contains(data, "/dicom/") {
+			err = SaveToJSON(strArrs, jsonFilePath)
+		}
+		if pdata != "yes" {
+			err = SaveToJSON(strArrs.Point[0], jsonPFilePath)
+		}
+
+		if err != nil {
+			beego.Error("read vtk file is fail :", err)
+			return "", "无flavia.msh文件", err
+		}
+		//返回前端数据信息
+		return strArrs, ".flavia.msh", nil
+	default:
+		return "", "没有对应类型的文件", nil
+	}
+
+}
+
+//DataPro 处理各类型数据
+func DataPro(uploadFilePath string, fileName string, data string, pdata string) (interface{}, string, error) {
+	if !IsExists(filepath.Join(uploadFilePath, "process", fileName)) {
+		return "0", "文件不存在,请上传数据文件", nil
+	}
+	nameStr := strings.Split(fileName, ".")
+	jsonFile := fileName + ".json"
+	jsonPFile := strings.ReplaceAll(fileName, "."+nameStr[len(nameStr)-1], "_"+nameStr[len(nameStr)-1]+"_POINTS.json")
+	beego.Debug("jsonFile", jsonFile, jsonPFile)
+	switch {
+	//处理csv文件数据
+	case strings.Contains(fileName, ".csv"):
+		jsonFilePath := filepath.Join(uploadFilePath, "dicom", jsonFile)
+		filePath := filepath.Join(uploadFilePath, "process", fileName)
+		csvFilePath := filepath.Join(uploadFilePath, "dicom", fileName)
+		csvArr, err := HandleCSV(filePath)
+		if !strings.Contains(data, "/dicom/") {
+			err = SaveToJSON(csvArr, jsonFilePath)
+			err = SaveToCsv(csvArr, csvFilePath)
+		}
+
+		if err != nil {
+			beego.Error("read csv file is fail :", err)
+			//返回前端数据信息
+			return "", "无csv文件", err
+		}
+		// jfilePath := ""
+		// if errs == nil {
+		// 	jfilePath = staticFile
+		// }
+		// info := &dao.JFile{
+		// 	FileType:  "csv",
+		// 	FileName:  fileName,
+		// 	JFilePath: jfilePath,
+		// }
+		// dao.JFileAdd(info)
+		//返回前端数据信息
+		return csvArr, ".csv", nil
+	case strings.Contains(fileName, ".vtk"):
+		jsonFilePath := filepath.Join(uploadFilePath, "dicom", jsonFile)
+		jsonPFilePath := filepath.Join(uploadFilePath, "dicom", jsonPFile)
+		filePath := filepath.Join(uploadFilePath, "process", fileName)
+		objdata, err := HandleVTK(filePath)
+		if !strings.Contains(data, "/dicom/") {
+			err = SaveToJSON(objdata, jsonFilePath)
+		}
+		if pdata != "yes" {
+			err = SaveToJSON(objdata.POINTS, jsonPFilePath)
+		}
+		if err != nil {
+			beego.Error("read vtk file is fail :", err)
+			return "", "无vtk文件", err
+		}
+		//返回前端数据信息
+		return objdata, ".vtk", nil
+	case strings.Contains(fileName, ".off"):
+		jsonFilePath := filepath.Join(uploadFilePath, "dicom", jsonFile)
+		jsonPFilePath := filepath.Join(uploadFilePath, "dicom", jsonPFile)
+		filePath := filepath.Join(uploadFilePath, "process", fileName)
+		objdata, err := HandleOFF(filePath)
+		if !strings.Contains(data, "/dicom/") {
+			err = SaveToJSON(objdata, jsonFilePath)
+		}
+		if pdata != "yes" {
+			err = SaveToJSON(objdata.POINTS, jsonPFilePath)
+		}
+
+		if err != nil {
+			beego.Error("read vtk file is fail :", err)
+			return "", "无off文件", err
+		}
+
+		//返回前端数据信息
+		return objdata, ".off", nil
+	case strings.Contains(strings.ToLower(fileName), ".stl"):
+		jsonFilePath := filepath.Join(uploadFilePath, "dicom", jsonFile)
+		jsonPFilePath := filepath.Join(uploadFilePath, "dicom", jsonPFile)
+		filePath := filepath.Join(uploadFilePath, "process", fileName)
+		//objdata, err := binarypro.BackSTLInfo(filePath)
+		var err error
+		objdata := &StlData{}
+		if b := IsBinary(filePath); b {
+			objdata, err = BackSTLInfo(filePath)
+		} else {
+			objdata, err = HandleStl(filePath)
+		}
+
+		if !strings.Contains(data, "/dicom/") {
+			err = SaveToJSON(&objdata, jsonFilePath)
+		}
+		if pdata != "yes" {
+			err = SaveToJSON(&objdata.POINTS, jsonPFilePath)
+		}
+		if err != nil {
+			beego.Error("read vtk file is fail :", err)
+			return "", "无stl文件", err
+		}
+		beego.Debug("web obj:", len(objdata.CELLS))
+		//返回前端数据信息
+		return objdata, ".off", err
+	case strings.Contains(strings.ToLower(fileName), ".inp"):
+		jsonFilePath := filepath.Join(uploadFilePath, "dicom", jsonFile)
+		jsonPFilePath := filepath.Join(uploadFilePath, "dicom", jsonPFile)
+		filePath := filepath.Join(uploadFilePath, "process", fileName)
+		objdata, err := HandleInp(filePath)
+		if !strings.Contains(data, "/dicom/") {
+			err = SaveToJSON(objdata, jsonFilePath)
+		}
+		if pdata != "yes" {
+			err = SaveToJSON(objdata.POINTS, jsonPFilePath)
+		}
+		if err != nil {
+			beego.Error("read vtk file is fail :", err)
+			return "", "无inp文件", err
+		}
+		//返回前端数据信息
+		return objdata, ".inp", nil
+	case strings.Contains(fileName, ".obj"):
+		objFile := strings.ReplaceAll(fileName, ".obj", "")
+		objFilePath := filepath.Join(uploadFilePath, "dicom", objFile)
+		_, errb := os.Stat(objFilePath)
+		if errb == nil {
+			staticFile := "/dicom/" + objFile
+			return staticFile, ".obj", nil
+		}
+		return "", "不存在obj文件", nil
+	case strings.Contains(fileName, ".msh") && len(strings.Split(fileName, ".")) == 2:
+		jsonFilePath := filepath.Join(uploadFilePath, "dicom", jsonFile)
+		jsonPFilePath := filepath.Join(uploadFilePath, "dicom", jsonPFile)
+		var tfileName string
+		if !strings.HasPrefix(fileName, "T") {
+			tfileName = "T" + fileName
+		} else {
+			tfileName = fileName
+		}
+		filePath := filepath.Join(uploadFilePath, "process", tfileName)
+		strArrs, err := HandleMSH(filePath)
+		if !strings.Contains(data, "/dicom/") {
+			err = SaveToJSON(strArrs, jsonFilePath)
+		}
+		if pdata != "yes" {
+			err = SaveToJSON(strArrs[0], jsonPFilePath)
+		}
+		if err != nil {
+			beego.Error("read vtk file is fail :", err)
+			return "", "无msh文件", err
+		}
+		//返回前端数据信息
+		return strArrs, ".msh", nil
+	case strings.Contains(fileName, ".post.msh"):
+		jsonFilePath := filepath.Join(uploadFilePath, "dicom", jsonFile)
+		jsonPFilePath := filepath.Join(uploadFilePath, "dicom", jsonPFile)
+		filePath := filepath.Join(uploadFilePath, "process", fileName)
+		tfileName := strings.Replace(fileName, ".msh", ".res", -1)
+		tfilePath := filepath.Join(uploadFilePath, "process", tfileName)
+		strArrs, err := HandlePostMSH(filePath, tfilePath)
+		if !strings.Contains(data, "/dicom/") {
+			err = SaveToJSON(strArrs, jsonFilePath)
+		}
+		if pdata != "yes" {
+			err = SaveToJSON(strArrs.StrCoord, jsonPFilePath)
+		}
+
+		if err != nil {
+			beego.Error("read vtk file is fail :", err)
+			return "", "无post.msh文件", err
+		}
+		//返回前端数据信息
+		return strArrs, ".post.msh", nil
+	case strings.Contains(fileName, ".flavia.msh"):
+		jsonFilePath := filepath.Join(uploadFilePath, "dicom", jsonFile)
+		jsonPFilePath := filepath.Join(uploadFilePath, "dicom", jsonPFile)
+		var ffileName string
+		if !strings.HasPrefix(fileName, "F") {
+			ffileName = "F" + fileName
+		} else {
+			ffileName = fileName
+		}
+		fileRes := strings.Replace(strings.Replace(ffileName, "F", "NT", -1), ".msh", ".res", -1)
+		filePathRes := filepath.Join(uploadFilePath, "process", fileRes)
+		tfileRes := strings.Replace(strings.Replace(ffileName, "F", "T", -1), ".msh", ".res", -1)
+		tfilePathRes := filepath.Join(uploadFilePath, "process", tfileRes)
+		filePath := filepath.Join(uploadFilePath, "process", ffileName)
 		strArrs, err := HandleFlaviaMSH(tfilePathRes, filePathRes, filePath)
 		if !strings.Contains(data, "/dicom/") {
 			err = SaveToJSON(strArrs, jsonFilePath)

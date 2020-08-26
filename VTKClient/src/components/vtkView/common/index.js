@@ -1,14 +1,14 @@
 /**
-* 文件名：/common/index.js
-* 作者：鲁杨飞
-* 创建时间：2020/8/24
-* 文件描述：模型渲染公共方法。
-* */
-import vtk from 'vtk.js/Sources/vtk';
+ 文件名：/common/index.js
+ 作者：鲁杨飞
+ 创建时间：2020/8/24
+ 文件描述：模型渲染公共方法。
+ */
 import React from "react";
 import { Spin } from "antd";
 import ReactDOM from 'react-dom';
 import cookie from 'react-cookies';
+import vtk from 'vtk.js/Sources/vtk';
 import html2canvas from 'html2canvas';
 import vtkActor from 'vtk.js/Sources/Rendering/Core/Actor';
 import vtkLight from 'vtk.js/Sources/Rendering/Core/Light';
@@ -29,7 +29,7 @@ import vtkPixelSpaceCallbackMapper from 'vtk.js/Sources/Rendering/Core/PixelSpac
 import vtkOrientationMarkerWidget from 'vtk.js/Sources/Interaction/Widgets/OrientationMarkerWidget';
 import vtkInteractorStyleManipulator from 'vtk.js/Sources/Interaction/Style/InteractorStyleManipulator';
 import vtkGestureCameraManipulator from 'vtk.js/Sources/Interaction/Manipulators/GestureCameraManipulator';
-import vtkInteractorStyleTrackballCamera from 'vtk.js/Sources/Interaction/Style/InteractorStyleTrackballCamera';
+// import vtkInteractorStyleTrackballCamera from 'vtk.js/Sources/Interaction/Style/InteractorStyleTrackballCamera';
 import vtkMouseCameraTrackballPanManipulator from 'vtk.js/Sources/Interaction/Manipulators/MouseCameraTrackballPanManipulator';
 import vtkMouseCameraTrackballRollManipulator from 'vtk.js/Sources/Interaction/Manipulators/MouseCameraTrackballRollManipulator';
 import vtkMouseCameraTrackballZoomManipulator from 'vtk.js/Sources/Interaction/Manipulators/MouseCameraTrackballZoomManipulator';
@@ -329,7 +329,6 @@ export const reassignManipulators = (model) => {
             vtkGestureCameraManipulator.newInstance()
         );
     }
-
 };
 
 //改变显示模式
@@ -365,7 +364,6 @@ export const changeManipulators = (model, opt, keydown, useLight, useAxis, scala
             model.renderWindow.render();
         }
     };
-    console.log(Scalar)
     if (Scalar === true || Scalar === null) {
         if (container1.current.childElementCount >= 1) {
             container1.current.innerHTML = null;
@@ -378,7 +376,7 @@ export const changeManipulators = (model, opt, keydown, useLight, useAxis, scala
         model.actor.getMapper().setInputData(vtk(polydata1));
         model.actor.getMapper().setScalarRange(min, max);
         model.actor.getProperty().setOpacity(inputValue);
-    } else if(Scalar === false){
+    } else if (Scalar === false) {
         model.actor.getMapper().setInputData(vtk(polydata2));
         model.actor.getProperty().setOpacity(inputValue);
     }
@@ -417,15 +415,18 @@ export const changeManipulators = (model, opt, keydown, useLight, useAxis, scala
     }
 
     //显示坐标系
-    if (model.fullScreenRenderer&&useAxis) {
-        if (useAxis===true) {
+
+    if (useAxis === true) {
+        if (model.renderer) {
             model.orientationWidget.setEnabled(true);
             model.renderWindow.render();
-        } else {
+        }
+    } else {
+        if (model.renderer) {
             model.orientationWidget.setEnabled(false);
             model.renderWindow.render();
-        };
-    }
+        }
+    };
 
     //改变鼠标事件
     if (opt === "Rotate") {
@@ -458,8 +459,12 @@ export const changeManipulators = (model, opt, keydown, useLight, useAxis, scala
 
 //显示边框
 export const showBounds = (bounds, model, container, polydata) => {
-    if (bounds) {
-        model.interactor.setInteractorStyle(vtkInteractorStyleTrackballCamera.newInstance());
+    if (bounds === true) {
+        if (document.querySelector('.textCanvas')) {
+            container.current.children[0].removeChild(document.querySelector('.textCanvas'))
+            model.renderer.removeActor(model.bounds);
+        }
+        // model.interactor.setInteractorStyle(vtkInteractorStyleTrackballCamera.newInstance());
         const textCanvas = document.createElement('canvas');
         textCanvas.style.position = "absuloat";
         textCanvas.classList.add(style.container, 'textCanvas');
@@ -472,7 +477,6 @@ export const showBounds = (bounds, model, container, polydata) => {
         outline.setInputData(polydata);
         const mapper = vtkMapper.newInstance();
         mapper.setInputConnection(outline.getOutputPort());
-
         const actor = vtkActor.newInstance();
         actor.setMapper(mapper);
         actor.getProperty().set({ lineWidth: 1 });
@@ -501,6 +505,7 @@ export const showBounds = (bounds, model, container, polydata) => {
         }
     }
 }
+
 //显示矢量
 export const showVector = (vector, model, points, vectorData, lut1, min, max, ArrowSize) => {
     if (vector === true) {
@@ -547,6 +552,7 @@ export const showVector = (vector, model, points, vectorData, lut1, min, max, Ar
 //读取json
 export const readJson = (filePath, _this, fileName, type) => {
     let xhr = new XMLHttpRequest()
+    console.log(filePath)
     xhr.open('GET', '/data' + filePath, true);
     xhr.responseType = 'json';
     xhr.send();
@@ -554,7 +560,7 @@ export const readJson = (filePath, _this, fileName, type) => {
         if (xhr.readyState === 2) {
             var dom = document.createElement('div');
             dom.setAttribute('id', 'loading');
-            document.getElementsByClassName('vtk-view')[0].appendChild(dom);
+            document.getElementsByClassName('views')[0].appendChild(dom);
             ReactDOM.render(<Spin tip="加载中..." size="large" />, dom);
         }
         if (xhr.readyState === 4) {
@@ -566,7 +572,7 @@ export const readJson = (filePath, _this, fileName, type) => {
                     type: type
                 }
             });
-            document.getElementsByClassName('vtk-view')[0].removeChild(document.getElementById('loading'));
+            document.getElementsByClassName('views')[0].removeChild(document.getElementById('loading'));
         }
     };
 }

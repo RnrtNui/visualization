@@ -1,9 +1,9 @@
 /**
-* 文件名：/component/Ligature.js
-* 作者：鲁杨飞
-* 创建时间：2020/8/24
-* 文件描述：canvas自定义背景并在图上绘制图元。
-* */
+ 文件名：/component/Ligature.js
+ 作者：鲁杨飞
+ 创建时间：2020/8/24
+ 文件描述：canvas自定义背景并在图上绘制图元。
+ */
 import React, { Component } from 'react';
 
 class Ligature extends Component {

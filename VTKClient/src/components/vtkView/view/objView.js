@@ -1,9 +1,9 @@
 /**
-* 文件名：objView.js
-* 作者：鲁杨飞
-* 创建时间：2020/8/24
-* 文件描述：*.obj贴图类型数据文件渲染逻辑。
-* */
+ 文件名：objView.js
+ 作者：鲁杨飞
+ 创建时间：2020/8/24
+ 文件描述：*.obj贴图类型数据文件渲染逻辑。
+ */
 import vtk from 'vtk.js/Sources/vtk';
 import React, { Component } from 'react';
 import { goUrl } from "../../../url";

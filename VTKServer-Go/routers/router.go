@@ -57,4 +57,9 @@ func init() {
 	beego.Router("/process/heatMap", HeatMap, "post:OnePost") //数据传输
 	beego.Router("/process/heatTwo", HeatMap, "post:TwoPost") //数据传输
 
+	//流程上传接口
+	ProUp := &controllers.ProcessFileUpController{}
+	beego.Router("/process/proFileUp", ProUp, "post:OnePost") //处理文件
+	beego.Router("/process/proUpTwo", ProUp, "post:TwoPost")  //处理文件
+
 }

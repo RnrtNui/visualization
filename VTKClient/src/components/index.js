@@ -1,9 +1,9 @@
 /**
-* 文件名：/vtkView/index.js
-* 作者：鲁杨飞
-* 创建时间：2020/8/24
-* 文件描述：主体文件，负责数据文件渲染和菜单栏之间参数传递，在侧边栏选择要显示的数据文件。
-* */
+ 文件名：/vtkView/index.js
+ 作者：鲁杨飞
+ 创建时间：2020/8/24
+ 文件描述：主体文件，负责数据文件渲染和菜单栏之间参数传递，在侧边栏选择要显示的数据文件。
+ */
 import React from "react";
 import axios from "./axios";
 import { goUrl } from "../url";
@@ -20,7 +20,7 @@ import InpView from "./vtkView/view/inpView";
 import ImageView from "./vtkView/view/imageView";
 import FlaviaView from "./vtkView/view/flaviaMshView";
 import PostMshView from "./vtkView/view/postMshView";
-import {readJson} from "./vtkView/common/index"
+import { readJson } from "./vtkView/common/index"
 
 const { Content } = Layout;
 
@@ -28,11 +28,26 @@ export default class Vtk extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            fileName: "", fileList: [], data: { "data": [], type: '' },
-            vtkRender: false, tree: {}, display: "none",
-            displayBar: 0, usePointPicker: null, useCellPicker: null,
-            useAxis: false, Scalar: true, Screen: null, keydown: "",
-            opt: "Rotate", size: "", light: false, bounds: false,
+            fileName: "",
+            fileList: [],
+            data: {
+                "data": [],
+                type: ''
+            },
+            vtkRender: false,
+            tree: {},
+            display: "none",
+            displayBar: 0,
+            usePointPicker: null,
+            useCellPicker: null,
+            useAxis: false,
+            Scalar: true,
+            Screen: null,
+            keydown: "",
+            opt: "Rotate",
+            size: "",
+            light: false,
+            bounds: false,
         };
     };
 
@@ -61,6 +76,32 @@ export default class Vtk extends React.Component {
                     console.log(error);
                 });
             }
+        } else if (this.props.match.params.id) {
+            let id = { "fileName": this.props.match.params.id };
+            axios.post(goUrl + '/process/proUpTwo', id).then(function (response) {
+                console.log(response);
+                if (response.data.data) {
+                    _this.setState({
+                        fileName: id["fileName"],
+                        data: response.data
+                    });
+                } else if (response.data.type !== ".obj" && response.data.filePath) {
+                    readJson(response.data.filePath, _this, id["fileName"], response.data.type);
+                } else if (response.data.type === ".obj") {
+                    let Suffix = response.data.filePath;
+                    if (Suffix.indexOf('.json') !== -1) {
+                        readJson(response.data.filePath, _this, id["fileName"], response.data.type);
+                    } else {
+                        _this.setState({
+                            fileName: id["fileName"],
+                            data: response.data
+                        });
+                    }
+                }
+            })
+                .catch(function (err) {
+                    console.log(err)
+                })
         } else {
             if (cookie.load("filename")) {
                 let filenames = cookie.load("filename");
@@ -82,7 +123,7 @@ export default class Vtk extends React.Component {
                             });
                         } else if (response.data.type !== ".obj" && response.data.filePath) {
                             readJson(response.data.filePath, _this, filenames, response.data.type);
-                        } else if (response.data.type === ".obj"){
+                        } else if (response.data.type === ".obj") {
                             let Suffix = response.data.filePath;
                             if (Suffix.indexOf('.json') !== -1) {
                                 readJson(response.data.filePath, _this, filenames, response.data.type);
@@ -200,7 +241,7 @@ export default class Vtk extends React.Component {
         let { data, fileName, display, displayBar, useAxis, keydown, usePointPicker, useCellPicker, light, opt, Scalar, Screen, bounds } = this.state;
         if (this.props.match.params.projectName) {
             let show = "100vh"
-            return (<div className="vtk-view" style={{ width: "100%", height: "100vh" }}>{
+            return (<div className="vtk-view views" style={{ width: "100%", height: "100vh" }}>{
                 this.state.data.type === ".csv" ? (< CsvView data={data} display={display} useScreen={Screen} useAxis={useAxis} fileName={fileName} opt={opt} show={show} keydown={keydown} />) :
                     data.type === ".vtk" ? (< VtkView data={data} Scalar={Scalar} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
                         data.type === ".post.msh" ? (< PostMshView data={data} Scalar={Scalar} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
@@ -211,8 +252,41 @@ export default class Vtk extends React.Component {
                                             data.type === ".inp" ? (< InpView data={data} Scalar={Scalar} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
                                                 data.type === '.vti' ? (<ImageView filename={fileName} />) : null
             }</div>)
-        }
-        else {
+        } else if (this.props.match.params.id) {
+            let show = "calc(100vh - 64px)"
+            return (<Layout>
+                <Layout className="site-layout" onMouseEnter={this.SiderOut} >
+                    <MenuBar style={{ paddingLeft: "100px", backgroundColor: "#E8E8E8", zIndex: "999", overflow: "hidden", border: "1px solid #ccc" }}
+                        onButton={this.onButton}
+                        useLight={this.useLight}
+                        useScreen={this.useScreen}
+                        getScalar={this.getScalar}
+                        onShow={this.onShow}
+                        onShowBar={this.onShowBar}
+                        getOperation={this.getOperation}
+                        usePointPic={this.usePointPic}
+                        useCellPic={this.useCellPic}
+                        useAxi={this.useAxi}
+                        showBounds={this.showBounds}
+                    />
+                    <Content className="site-layout-background"
+                        style={{ height: "calc(100vh - 64px)", display: "flex", width: "100%", backgroundColor: "#FFF" }} >
+                        <Col className="visual-view views">
+                            {
+                                data.type === ".csv" ? (< CsvView data={data} display={display} useScreen={Screen} useAxis={useAxis} opt={opt} fileName={fileName} show={show} keydown={keydown} />) :
+                                    data.type === ".vtk" ? (< VtkView data={data} Scalar={Scalar} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
+                                        data.type === ".msh" ? (< MshView data={data} Scalar={Scalar} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
+                                            data.type === ".flavia.msh" ? (< FlaviaView data={data} Scalar={Scalar} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
+                                                data.type === ".post.msh" ? (< PostMshView data={data} Scalar={Scalar} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
+                                                    data.type === '.vti' ? (<ImageView filename={fileName} useScreen={Screen} display={display} />) :
+                                                        data.type === ".off" ? (< OffView data={data} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
+                                                            data.type === ".obj" ? (< ObjView data={data} filename={fileName} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
+                                                                data.type === ".inp" ? (< InpView data={data} filename={fileName} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} Scalar={Scalar} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) : null
+                            } </Col>
+                    </Content>
+                </Layout>
+            </Layout>)
+        } else {
             let show = "calc(100vh - 64px)"
             return (
                 <div>
@@ -236,7 +310,7 @@ export default class Vtk extends React.Component {
                                 <Col className="vtk-panel">
                                     <Sider getData={this.getData} />
                                 </Col >
-                                <Col className="vtk-view">
+                                <Col className="vtk-view views">
                                     {
                                         data.type === ".csv" ? (< CsvView data={data} display={display} useScreen={Screen} useAxis={useAxis} opt={opt} fileName={fileName} show={show} keydown={keydown} />) :
                                             data.type === ".vtk" ? (< VtkView data={data} Scalar={Scalar} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :

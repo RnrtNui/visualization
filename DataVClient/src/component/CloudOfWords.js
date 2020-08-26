@@ -1,9 +1,9 @@
 /**
-* 文件名：/component/CloudOfWords.js
-* 作者：鲁杨飞
-* 创建时间：2020/8/24
-* 文件描述：词云图及形状变换。
-* */
+ 文件名：/component/CloudOfWords.js
+ 作者：鲁杨飞
+ 创建时间：2020/8/24
+ 文件描述：词云图及形状变换。
+ */
 import React, { Component } from 'react';
 import echarts from 'echarts';
 import 'echarts-wordcloud';

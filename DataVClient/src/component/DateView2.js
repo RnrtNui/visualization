@@ -1,9 +1,9 @@
 /**
-* 文件名：/component/DateView2.js
-* 作者：鲁杨飞
-* 创建时间：2020/8/24
-* 文件描述：极坐标系下的堆叠柱状图示例。
-* */
+ 文件名：/component/DateView2.js
+ 作者：鲁杨飞
+ 创建时间：2020/8/24
+ 文件描述：极坐标系下的堆叠柱状图示例。
+ */
 import React, { Component } from 'react';
 import echarts from 'echarts';
 import chinaData from 'echarts/map/json/china.json'
