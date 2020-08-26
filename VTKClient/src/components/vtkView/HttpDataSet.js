@@ -1,9 +1,9 @@
 /**
- 文件名：HttpDataSet.js
- 作者：鲁杨飞
- 创建时间：2020/8/24
- 文件描述：vtk.js读取数据文件内容处理逻辑。
- */
+* 文件名：HttpDataSet.js
+* 作者：鲁杨飞
+* 创建时间：2020/8/24
+* 文件描述：vtk.js读取数据文件内容处理逻辑。
+*/
 // For vtk factory
 import 'vtk.js/Sources/Common/DataModel/ImageData';
 import 'vtk.js/Sources/Common/DataModel/PolyData';

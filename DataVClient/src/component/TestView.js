@@ -1,9 +1,9 @@
 /**
- 文件名：/component/TestView.js
- 作者：鲁杨飞
- 创建时间：2020/8/24
- 文件描述：和模型结合显示三维模型点集。
- */
+* 文件名：/component/TestView.js
+* 作者：鲁杨飞
+* 创建时间：2020/8/24
+* 文件描述：和模型结合显示三维模型点集。
+*/
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 import { Spin } from "antd";

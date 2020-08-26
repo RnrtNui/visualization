@@ -1,9 +1,9 @@
 /**
- 文件名：/component/home.js
- 作者：鲁杨飞
- 创建时间：2020/8/24
- 文件描述：默认显示组件，可跳转到四个示例。
- */
+* 文件名：/component/home.js
+* 作者：鲁杨飞
+* 创建时间：2020/8/24
+* 文件描述：默认显示组件，可跳转到四个示例。
+*/
 import React, { Component } from 'react';
 import echarts from 'echarts';
 import chinaData from 'echarts/map/json/china.json';

@@ -1,9 +1,9 @@
 /**
- 文件名：/MenuBar/index.js
- 作者：鲁杨飞
- 创建时间：2020/8/24
- 文件描述：顶部菜单栏部分。
- */
+* 文件名：/MenuBar/index.js
+* 作者：鲁杨飞
+* 创建时间：2020/8/24
+* 文件描述：顶部菜单栏部分。
+*/
 import React from 'react';
 import { Layout, Tooltip } from "antd";
 import '../../assets/IconFont/iconfont.css';

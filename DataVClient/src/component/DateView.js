@@ -1,9 +1,9 @@
 /**
- 文件名：/component/DateView.js
- 作者：鲁杨飞
- 创建时间：2020/8/24
- 文件描述：中国疫情地图显示。
- */
+* 文件名：/component/DateView.js
+* 作者：鲁杨飞
+* 创建时间：2020/8/24
+* 文件描述：中国疫情地图显示。
+*/
 import React, { Component } from 'react';
 import echarts from 'echarts';
 import chinaData from 'echarts/map/json/china.json';

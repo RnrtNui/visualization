@@ -1,9 +1,9 @@
 /**
- 文件名：/common/index.js
- 作者：鲁杨飞
- 创建时间：2020/8/24
- 文件描述：模型渲染公共方法。
- */
+* 文件名：/common/index.js
+* 作者：鲁杨飞
+* 创建时间：2020/8/24
+* 文件描述：模型渲染公共方法。
+*/
 import React from "react";
 import { Spin } from "antd";
 import ReactDOM from 'react-dom';

@@ -1,9 +1,9 @@
 /**
- 文件名：/vtkView/index.js
- 作者：鲁杨飞
- 创建时间：2020/8/24
- 文件描述：主体文件，负责数据文件渲染和菜单栏之间参数传递，在侧边栏选择要显示的数据文件。
- */
+* 文件名：/vtkView/index.js
+* 作者：鲁杨飞
+* 创建时间：2020/8/24
+* 文件描述：主体文件，负责数据文件渲染和菜单栏之间参数传递，在侧边栏选择要显示的数据文件。
+*/
 import React from "react";
 import axios from "./axios";
 import { goUrl } from "../url";

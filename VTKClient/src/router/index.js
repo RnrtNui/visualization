@@ -1,9 +1,9 @@
 /**
- 文件名：、/router/index.js
- 作者：鲁杨飞
- 创建时间：2020/8/24
- 文件描述：项目路由文件。
- */
+* 文件名：、/router/index.js
+* 作者：鲁杨飞
+* 创建时间：2020/8/24
+* 文件描述：项目路由文件。
+*/
 import React from 'react';
 import Vtk from '../components/index';
 import { createBrowserHistory } from 'history';
