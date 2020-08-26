@@ -48,7 +48,7 @@
 
 ###数据位置
     在配置文件中指定data路径
-    在FTP上的”鲁阳飞“目录中下载data.zip解压到指定的data路径
+    在FTP上的”鲁杨飞“目录中下载data.zip解压到指定的data路径
 
 ###添加代理在终端下执行
     go env -w GOPROXY=https://goproxy.cn,direct
