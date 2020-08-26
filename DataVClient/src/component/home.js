@@ -29,16 +29,16 @@ class DateView extends Component {
 		return (
 			<div style={{"padding":"20px"}}>
                 <div>
-                    <span>案例一 : </span><a href="http://192.168.2.134:3600/echarts0" >全国疫情状况</a>
+                    <span>案例一 : </span><a href="http://192.168.2.134:3601/echarts0" >全国疫情状况</a>
                 </div>
                 <div>
-                    <span>案例二 : </span><a href="http://192.168.2.134:3600/echarts1" >Watermark-Echarts Download</a>
+                    <span>案例二 : </span><a href="http://192.168.2.134:3601/echarts1" >Watermark-Echarts Download</a>
                 </div>
                 <div>
-                    <span>案例三 : </span><a href="http://192.168.2.134:3600/echarts2" >极坐标系下的堆叠柱状图</a>
+                    <span>案例三 : </span><a href="http://192.168.2.134:3601/echarts2" >极坐标系下的堆叠柱状图</a>
                 </div>
                 <div>
-                    <span>案例四 : </span><a href="http://192.168.2.134:3600/echarts3" >3D Bar with Dataset</a>
+                    <span>案例四 : </span><a href="http://192.168.2.134:3601/echarts3" >3D Bar with Dataset</a>
                 </div>
             </div>
 		)
