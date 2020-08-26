@@ -8,6 +8,7 @@ import React, { Component } from 'react';
 import BMap from 'BMap';
 import BMapLib from 'BMapLib';
 import axios from 'axios';
+import {goUrl} from "../url"
 
 class BaiDuMap extends Component {
     constructor(props) {
@@ -37,7 +38,7 @@ class BaiDuMap extends Component {
             let id = this.props.match.params.id;
             let time = {};
             time["timeID"] = id.toString();
-            axios.post("http://192.168.2.112:8002/process/transTwo", time).then(req => {
+            axios.post(goUrl+"/process/transTwo", time).then(req => {
                 let data = JSON.parse(JSON.stringify(req.data.data));
                 let pointData = [];
                 for (let i = 0; i < data.length; i++) {

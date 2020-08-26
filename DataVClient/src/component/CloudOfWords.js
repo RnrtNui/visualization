@@ -8,6 +8,7 @@ import React, { Component } from 'react';
 import echarts from 'echarts';
 import 'echarts-wordcloud';
 import axios from "axios";
+import {goUrl} from "../url"
 
 class CloudOfWords extends Component {
     constructor(props) {
@@ -26,7 +27,7 @@ class CloudOfWords extends Component {
             time["timeID"] = this.props.match.params.id.toString();
             let myChart1 = echarts.init(document.getElementById('main1'));
             // 绘制图表
-            axios.post("http://192.168.2.112:8002/process/cloudTwo", time).then(req => {
+            axios.post(goUrl+"/process/cloudTwo", time).then(req => {
                 let data = req.data.data;
                 console.log(data);
                 if (data["shape"].length > 1) {

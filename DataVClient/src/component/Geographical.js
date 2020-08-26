@@ -10,6 +10,8 @@ import { Spin } from "antd";
 import echarts from 'echarts';
 import 'echarts-gl/dist/echarts-gl.js';
 import axios from 'axios';
+import {goUrl} from "../url"
+
 class Geographical extends Component {
     constructor(props) {
         super(props);
@@ -24,7 +26,7 @@ class Geographical extends Component {
         if (this.props.match.params.id) {
             let id = {};
             id["timeID"] = this.props.match.params.id;
-            axios.post("http://192.168.2.134:8002/process/heatTwo", id).then((req) => {
+            axios.post(goUrl+"/process/heatTwo", id).then((req) => {
                 console.log(req.data)
                 let heatMapData = JSON.parse(req.data.data.data);
                 let url = "/data/" + req.data.mapData;
