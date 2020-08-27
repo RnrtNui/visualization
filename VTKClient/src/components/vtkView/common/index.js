@@ -417,12 +417,12 @@ export const changeManipulators = (model, opt, keydown, useLight, useAxis, scala
     //显示坐标系
 
     if (useAxis === true) {
-        if (model.renderer) {
+        if (model.orientationWidget) {
             model.orientationWidget.setEnabled(true);
             model.renderWindow.render();
         }
     } else {
-        if (model.renderer) {
+        if (model.orientationWidget) {
             model.orientationWidget.setEnabled(false);
             model.renderWindow.render();
         }
