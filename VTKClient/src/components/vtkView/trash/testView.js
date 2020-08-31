@@ -1,396 +1,206 @@
-import vtkActor from 'vtk.js/Sources/Rendering/Core/Actor';
-import vtkFullScreenRenderWindow from 'vtk.js/Sources/Rendering/Misc/FullScreenRenderWindow';
-import vtkMapper from 'vtk.js/Sources/Rendering/Core/Mapper';
+/**
+* 文件名：offView.js
+* 作者：鲁杨飞
+* 创建时间：2020/8/24
+* 文件描述：*.off类型数据文件渲染逻辑。
+*/
+import vtk from 'vtk.js/Sources/vtk';
+import Draggable from 'react-draggable';
 import React, { Component } from 'react';
-import vtkPolyData from 'vtk.js/Sources/Common/DataModel/PolyData';
-import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray';
-export default class mshView extends Component {
+import { Slider, Input, Col, Row } from "antd";
+import vtkActor from 'vtk.js/Sources/Rendering/Core/Actor';
+import vtkMapper from 'vtk.js/Sources/Rendering/Core/Mapper';
+import { Rendering, Screen, gl, Axis, reassignManipulators, changeManipulators, showBounds } from "../common/index";
+
+const InputGroup = Input.Group;
+
+export default class offView extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            data: '',
-            data1: ''
+            data: [], activeScalar: [], model: {}, canvas: {},
+            useScalar: false, boxBgColor: "#ccc", value: 0,
+            displayBox: "none", points: [], cells: [], pointData: [0, 1], min: null, max: null,
+            scalarBar: "0", mode: "rainbow", scale: [], unique: [], inputValue: 1,
+            cellDataName: [], vector: false, ArrowSize: 1, vectorData: [], OpenGlRW: {}
         }
         this.container = React.createRef();
+        this.container1 = React.createRef();
     };
 
     // 渲染
     result = () => {
-        // const reader = vtkSTLReader.newInstance();
-
-
-        // ----------------------------------------------------------------------------
-        let _this = this;
-
-        // ----------------------------------------------------------------------------
-        // Use a file reader to load a local file
-        // ----------------------------------------------------------------------------
-
-        const myContainer = document.querySelector('.vtk-container');
-        const fileContainer = document.createElement('div');
-        fileContainer.innerHTML = '<input type="file" class="file"/>';
-        myContainer.appendChild(fileContainer);
-
-        const fileInput = fileContainer.querySelector('input');
-
-        function handleFile(event) {
-            event.preventDefault();
-            const dataTransfer = event.dataTransfer;
-            const files = event.target.files || dataTransfer.files;
-            if (files.length === 1) {
-                myContainer.removeChild(fileContainer);
-                const fileReader = new FileReader();
-                fileReader.onload = function onLoad(e) {
-                    const parseAsArrayBuffer = (content) => {
-                        if (!content) {
-                            return;
-                        }
-                        // Binary parsing
-                        function arrayBufferToString(arrayBuffer) {
-                            if ('TextDecoder' in window) {
-                                const decoder = new TextDecoder('latin1');
-                                return decoder.decode(arrayBuffer);
-                            }
-                            // fallback on platforms w/o TextDecoder
-                            const byteArray = new Uint8Array(arrayBuffer);
-                            const strArr = [];
-                            for (let i = 0; i < byteArray.length; ++i) {
-                                strArr[i] = String.fromCharCode(byteArray[i]);
-                            }
-                            return strArr.join('');
-                        }
-                        function parseHeader(headerString) {
-                            const headerSubStr = headerString.split(' ');
-                            const fieldValues = headerSubStr.filter((e) => e.indexOf('=') > -1);
-
-                            const header = {};
-                            for (let i = 0; i < fieldValues.length; ++i) {
-                                const fieldValueStr = fieldValues[i];
-                                const fieldValueSubStr = fieldValueStr.split('=');
-                                if (fieldValueSubStr.length === 2) {
-                                    header[fieldValueSubStr[0]] = fieldValueSubStr[1];
-                                }
-                            }
-                            return header;
-                        }
-                        //对字符串扩展
-                        function ResetBlank(str) {
-                            var regEx = /\s+/g;
-                            return str.replace(regEx, ' ');
-                        };
-                        // Header
-                        const headerData = content.slice(0, 100);
-                        const headerStr = arrayBufferToString(headerData);
-                        // let str = headerStr.slice(headerStr.indexOf("POINTS"), headerStr.indexOf("float") + 5)
-                        // console.log(ResetBlank(str).split(" ")[1]);
-                        const header = parseHeader(headerStr);
-
-                        // Check if ascii format
-                        const solidIndex = headerStr.indexOf('solid ');
-                        if (solidIndex !== -1 && solidIndex < 10) {
-                            const parseAsText = (content) => {
-                                if (!content) {
-                                    return;
-                                }
-                                const lines = content.split('\n');
-                                let offset = 1;
-                                const points = [];
-                                const cellArray = [];
-                                const cellNormals = [];
-
-                                while (offset !== -1) {
-                                    offset = readTriangle(lines, offset, points, cellArray, cellNormals);
-                                }
-
-                                const polydata = vtkPolyData.newInstance();
-                                polydata.getPoints().setData(Float32Array.from(points), 3);
-                                polydata.getPolys().setData(Uint32Array.from(cellArray));
-                                polydata.getCellData().setNormals(
-                                    vtkDataArray.newInstance({
-                                        name: 'Normals',
-                                        values: Float32Array.from(cellNormals),
-                                        numberOfComponents: 3,
-                                    })
-                                );
-
-                                // Add new output
-                                // model.output[0] = polydata;
-                            };
-                            parseAsText(arrayBufferToString(content));
-                            return;
-                        }
-
-                        // Data
-                        const dataView = new DataView(content, 84);
-                        console.log(dataView);
-
-                        global.dataview = dataView;
-                        const nbFaces = (content.byteLength - 84) / 50;
-                        console.log(nbFaces);
-
-                        const pointValues = new Float32Array(nbFaces * 9);
-                        const normalValues = new Float32Array(nbFaces * 3);
-                        const cellValues = new Uint32Array(nbFaces * 4);
-                        const cellDataValues = new Uint16Array(nbFaces);
-                        let cellOffset = 0;
-
-                        for (let faceIdx = 0; faceIdx < nbFaces; faceIdx++) {
-                            const offset = faceIdx * 50;
-                            normalValues[faceIdx * 3 + 0] = dataView.getFloat32(offset + 0, true);
-                            normalValues[faceIdx * 3 + 1] = dataView.getFloat32(offset + 4, true);
-                            normalValues[faceIdx * 3 + 2] = dataView.getFloat32(offset + 8, true);
-
-                            pointValues[faceIdx * 9 + 0] = dataView.getFloat32(offset + 12, true);
-                            pointValues[faceIdx * 9 + 1] = dataView.getFloat32(offset + 16, true);
-                            pointValues[faceIdx * 9 + 2] = dataView.getFloat32(offset + 20, true);
-                            pointValues[faceIdx * 9 + 3] = dataView.getFloat32(offset + 24, true);
-                            pointValues[faceIdx * 9 + 4] = dataView.getFloat32(offset + 28, true);
-                            pointValues[faceIdx * 9 + 5] = dataView.getFloat32(offset + 32, true);
-                            pointValues[faceIdx * 9 + 6] = dataView.getFloat32(offset + 36, true);
-                            pointValues[faceIdx * 9 + 7] = dataView.getFloat32(offset + 40, true);
-                            pointValues[faceIdx * 9 + 8] = dataView.getFloat32(offset + 44, true);
-
-                            cellValues[cellOffset++] = 3;
-                            cellValues[cellOffset++] = faceIdx * 3 + 0;
-                            cellValues[cellOffset++] = faceIdx * 3 + 1;
-                            cellValues[cellOffset++] = faceIdx * 3 + 2;
-
-                            cellDataValues[faceIdx] = dataView.getUint16(offset + 48, true);
-                        }
-
-                        // Rotate points
-                        const orientationField = 'SPACE';
-                        if (orientationField in header && header[orientationField] !== 'LPS') {
-                            const XYZ = header[orientationField];
-                            const mat4 = new Float32Array(16);
-                            mat4[15] = 1;
-                            switch (XYZ[0]) {
-                                case 'L':
-                                    mat4[0] = 1;
-                                    break;
-                                case 'R':
-                                    mat4[0] = -1;
-                                    break;
-                                default:
-                                    vtkErrorMacro(
-                                        `Can not convert STL file from ${XYZ} to LPS space: ` +
-                                        `permutations not supported. Use itk.js STL reader instead.`
-                                    );
-                                    return;
-                            }
-                            switch (XYZ[1]) {
-                                case 'P':
-                                    mat4[5] = 1;
-                                    break;
-                                case 'A':
-                                    mat4[5] = -1;
-                                    break;
-                                default:
-                                    vtkErrorMacro(
-                                        `Can not convert STL file from ${XYZ} to LPS space: ` +
-                                        `permutations not supported. Use itk.js STL reader instead.`
-                                    );
-                                    return;
-                            }
-                            switch (XYZ[2]) {
-                                case 'S':
-                                    mat4[10] = 1;
-                                    break;
-                                case 'I':
-                                    mat4[10] = -1;
-                                    break;
-                                default:
-                                    vtkErrorMacro(
-                                        `Can not convert STL file from ${XYZ} to LPS space: ` +
-                                        `permutations not supported. Use itk.js STL reader instead.`
-                                    );
-                                    return;
-                            }
-                            vtkMatrixBuilder
-                                .buildFromDegree()
-                                .setMatrix(mat4)
-                                .apply(pointValues)
-                                .apply(normalValues);
-                        }
-
-                        const polydata = vtkPolyData.newInstance();
-                        polydata.getPoints().setData(pointValues, 3);
-                        polydata.getPolys().setData(cellValues);
-                        polydata
-                            .getCellData()
-                            .setScalars(
-                                vtkDataArray.newInstance({ name: 'Attribute', values: cellDataValues })
-                            );
-                        polydata.getCellData().setNormals(
-                            vtkDataArray.newInstance({
-                                name: 'Normals',
-                                values: normalValues,
-                                numberOfComponents: 3,
-                            })
-                        );
-
-                        // Add new output
-                        const mapper = vtkMapper.newInstance({ scalarVisibility: false });
-                        const actor = vtkActor.newInstance();
-
-                        actor.setMapper(mapper);
-                        mapper.setInputData(polydata);
-                        const fullScreenRenderer = vtkFullScreenRenderWindow.newInstance({
-                            background: [0, 0, 0],
-                            rootContainer: _this.container.current,
-                            containerStyle: { "border": null, "width": "100%", "height": "100%", "minHeight": "100px", "minWidth": "100px" },
-                        });
-                        const renderer = fullScreenRenderer.getRenderer();
-                        const renderWindow = fullScreenRenderer.getRenderWindow();
-
-                        const resetCamera = renderer.resetCamera;
-                        const render = renderWindow.render;
-                        console.log(polydata.getState())
-                        renderer.addActor(actor);
-                        resetCamera();
-                        render();
-                    };
-                    parseAsArrayBuffer(fileReader.result);
-                };
-                fileReader.readAsArrayBuffer(files[0]);
-            }
+        let { data } = this.props;
+        let { model } = this.state;
+        let vtkBox = document.getElementsByClassName('vtk-container')[0];
+        if (vtkBox) {
+            vtkBox.innerHTML = null;
         }
-
-        fileInput.addEventListener('change', handleFile);
+        //创建场景
+        Rendering(model, this.container);
+        let OpenGlRW = model.fullScreenRenderer.getOpenGLRenderWindow();
+        let points = [
+            13.2321585512394, 24.4431845869678, 5.27382404843011,
+            13.479771209699, 24.8714622036826, 5.2566345296015,
+            13.9108569522462, 24.6283107384847, 5.2651005032975,
+            13.2361313508423, 24.5113724286897, 7.02995475357321,
+            13.4834742155562, 24.9391509112416, 7.01185324522814,
+            13.9143588038453, 24.6967645867095, 7.02123120843858,
+            13.240079738303, 24.5795180463945, 8.78608715030275,
+            13.4871570435526, 25.0068380244801, 8.76802740597414,
+            13.9178389218925, 24.7651736894471, 8.77736360516905,
+            13.2440041894551, 24.6476222630404, 10.5422212039666,
+            13.4908199542874, 25.0745224975197, 10.5251141258302,
+            13.9212977382339, 24.8335389337785, 10.533497658834,
+            14.723465037636, 23.7934552794615, 10.5422245823181,
+            14.9697636026552, 24.2206541182234, 10.525117504234,
+            14.5458268239756, 24.4729670333677, 10.5335010371854,
+            14.6664472449538, 23.7560044727683, 8.78608940264171,
+            14.9129785485126, 24.1836396842409, 8.76802965717117,
+            14.4883501569979, 24.4357889645989, 8.77736585750745,
+            14.6094055660541, 23.7185122360935, 7.02995587977835,
+            14.8562011665793, 24.1466066813291, 7.01185437024587,
+            14.4308461583432, 24.3985705187531, 7.0212323346446,
+            14.5523395260867, 23.6809777457606, 5.2738240484295,
+            14.7994324928042, 24.1095554066427, 5.25663452960089,
+            14.3733142757018, 24.3613108782988, 5.26510050329689,
+            29.3472605242604, 0.986214595872418, 3.78254759356271,
+            29.8388243051692, 0.986067332587343, 3.77411088561136,
+            29.8471157533235, 0.494573462559118, 3.78254759356271,
+            29.3887617027557, 1.02840915544003, 6.19987229221783,
+            29.8796024141642, 1.02823300595758, 6.18978069441764,
+            29.8886052205013, 0.537474791118491, 6.19987229221722,
+            29.4301748765547, 1.07060374159598, 8.6171985141179,
+            29.9203257088892, 1.07042833613428, 8.60714954193784,
+            29.9300052341523, 0.580373098675937, 8.61719851411729,
+            29.4715011526252, 1.11279835296375, 11.0345261804025,
+            29.9609939009263, 1.11265232831158, 11.0261604336826,
+            29.971316938546, 0.623268422919438, 11.0345261804025,
+            13.8622790802837, 23.5024515804398, 4.29999999999999,
+            14.2877994773275, 23.2567772646609, 4.29999999999998,
+            14.2952258322446, 23.2524896566517, 4.79127379678135,
+            14.1298320162645, 23.9609282067007, 4.29999999999877,
+            14.5496682114311, 23.7102629205689, 4.30241467082884,
+            14.4279388624965, 23.4823553659869, 4.79127385084954,
+            14.359903654773, 24.3476911987321, 4.73404625688157,
+            14.7801684957282, 24.0945224437398, 4.7314786833783,
+            14.5437111719279, 23.6753025959935, 5.00829659093551,
+            14.3733142757018, 24.3613108782988, 5.26510050329605,
+            14.7994324928042, 24.1095554066427, 5.25663452960006,
+            14.5523395260867, 23.6809777457606, 5.27382404842938,
+            12.9896338277731, 24.0062735518852, 4.79127379678135,
+            12.9970601826891, 24.0019859438741, 4.29999999999998,
+            13.4225805797329, 23.7563116280951, 4.29999999999999,
+            13.1223468563894, 24.2361392621626, 4.79127385084952,
+            13.2588559139061, 24.4555137480178, 4.30241467082918,
+            13.6858565171272, 24.2172575806419, 4.29999999999879,
+            13.2315579044517, 24.4328746381926, 5.00829659093591,
+            13.4763842804682, 24.8472626113876, 4.73147868337891,
+            13.9057672742146, 24.6098869602973, 4.7340462568825,
+            13.2321585512394, 24.4431845869678, 5.27382404843011,
+            13.4797712096991, 24.8714622036826, 5.2566345296015,
+            13.9108569522462, 24.6283107384847, 5.2651005032975,
+            28.8474101405335, 0.977639379852068, 3.29127379678135,
+            28.8474101405329, 0.969064163831718, 2.79999999999998,
+            28.8474101405328, 0.477715532273862, 2.79999999999999,
+            29.116140967336, 0.977639380926874, 3.29127385835695,
+            29.3764893478679, 0.969139949803669, 2.80434177542878,
+            29.3847974920077, 0.482164512755073, 2.79999999999929,
+            29.3426429301613, 0.981519779553613, 3.51358174679489,
+            29.8252979027411, 0.976822022817849, 3.24444744362019,
+            29.8378052394805, 0.489722233165866, 3.24461714901677,
+            29.3472605242604, 0.986214595872418, 3.78254759356272,
+            29.8388243051692, 0.986067332587347, 3.77411088561137,
+            29.8471157533235, 0.494573462559118, 3.78254759356272,
+            -29.4715011526252, 1.11279835296382, 11.0345261804026,
+            -29.9609939009263, 1.11265232831165, 11.0261604336827,
+            -29.971316938546, 0.623268422919505, 11.0345261804026,
+            -29.4301748765765, 1.07060374159603, 8.61719851411747,
+            -29.9203257089196, 1.07042833611839, 8.60714954193753,
+            -29.9300052341523, 0.580373098675597, 8.61719851411724,
+            -29.3887617027509, 1.02840915544009, 6.19987229221778,
+            -29.8796024141427, 1.02823300594599, 6.18978069441808,
+            -29.8886052205013, 0.53747479111818, 6.1998722922171,
+            -29.3472605242604, 0.986214595872479, 3.78254759356245,
+            -29.8388243051692, 0.986067332587407, 3.7741108856111,
+            -29.8471157533235, 0.49457346255918, 3.78254759356245,
+        ]; //点
+        let cells = [
+            3, 0, 1, 2,
+            3, 3, 4, 5,
+            3, 6, 7, 8,
+            3, 9, 10, 11,
+            3, 12, 13, 14,
+            3, 15, 16, 17,
+            3, 18, 19, 20,
+            3, 21, 22, 23,
+            3, 24, 25, 26,
+            3, 27, 28, 29,
+            3, 30, 31, 32,
+            3, 33, 34, 35,
+            3, 36, 37, 38,
+            3, 39, 40, 41,
+            3, 42, 43, 44,
+            3, 45, 46, 47,
+            3, 48, 49, 50,
+            3, 51, 52, 53,
+            3, 54, 55, 56,
+            3, 57, 58, 59,
+            3, 60, 61, 62,
+            3, 63, 64, 65,
+            3, 66, 67, 68,
+            3, 69, 70, 71,
+            3, 72, 73, 74,
+            3, 75, 76, 77,
+            3, 78, 79, 80,
+            3, 81, 82, 83,
+        ]   //单元
+        let polydata = vtk({
+            vtkClass: 'vtkPolyData',
+            points: {
+                vtkClass: 'vtkPoints',
+                dataType: 'Float32Array',
+                numberOfComponents: 3,
+                values: points,
+            },
+            lines: {
+                vtkClass: 'vtkCellArray',
+                dataType: "Float32Array",
+                values: cells,
+            },
+        });
+        console.log(polydata.getState())
+        const mapper = vtkMapper.newInstance({
+            interpolateScalarsBeforeMapping: true
+        });
+        mapper.setInputData(polydata);
+        const actor = vtkActor.newInstance();
+        model.mapper = mapper;
+        model.actor = actor;
+        actor.setMapper(mapper);
+        model.renderer.addActor(actor);
+        model.interactorStyle.setCenterOfRotation(mapper.getCenter())
+        model.camera = model.renderer.getActiveCamera()
+        reassignManipulators(model);
+        this.setState({
+            OpenGlRW: OpenGlRW
+        })
+        model.renderer.resetCamera();
+        model.renderWindow.render();
     };
 
     componentDidMount() {
         this.result();
+        Axis(this.state.model);
     };
-
-    componentDidUpdate = (prevProps) => {
-        let { useScreen } = this.props
-        if (useScreen !== prevProps.useScreen) {
-            if (document.getElementsByTagName("canvas").length > 0) {
-                this.Screen(document.getElementsByTagName("canvas")[0])
-            }
-        }
-    };
-
-    //解决webgl上下文丢失问题
-    gl = () => {
-        let OpenGlRW = this.state.model.fullScreenRenderer.getOpenGLRenderWindow();
-        OpenGlRW.initialize();
-        let gl = OpenGlRW.getShaderCache().getContext();
-        gl.flush();
-    }
 
     render() {
-
-
+        let {
+            OpenGlRW
+        } = this.state;
+        if (OpenGlRW.initialize) gl(OpenGlRW);
         return (
             <div>
-                {/* <Draggable handle=".pointPicker"
-                    defaultPosition={{ x: 0, y: 0 }}
-                    position={null}
-                    grid={[1, 1]}
-                    scale={1}>
-                    <div style={{ display: displayBox2, position: "absolute", zIndex: "90", top: "20px", right: "20px" }}>
-                        <div style={{ width: "350px", background: boxBgColor, padding: "20px", lineHeight: "20px", display: "block" }}>
-                            <span className="pointPicker" style={{ display: "inline-block", width: "100%", textAlign: "center" }}>pointPicker</span>
-                            <InputGroup>
-                                <Row >
-                                    <Col >Pick at:</Col >
-                                </Row>
-                                <Row >
-                                    <Col >
-                                        <Input className="picke1-1" type="text" style={{ width: "33%" }} value={p1[0]} />
-                                        <Input className="picke1-2" type="text" style={{ width: "33%" }} value={p1[1]} />
-                                        <Input className="picke1-3" type="text" style={{ width: "33%" }} value={p1[2]} />
-
-                                    </Col >
-                                </Row>
-                                <Row style={{ display: pickerT }}>
-                                    <Col >Picked point:</Col >
-                                </Row>
-                                <Row style={{ display: pickerT }}>
-                                    <Col >
-                                        <Input className="picke2" type="text" style={{ width: "30%" }} value={p2} />
-                                    </Col >
-                                </Row>
-                                <Row style={{ display: pickerT }}>
-                                    <Col >Picked:</Col >
-                                </Row>
-                                <Row style={{ display: pickerT }}>
-                                    <Col >
-                                        <Input className="picke3-1" type="text" style={{ width: "33%" }} value={p3[0]} />
-                                        <Input className="picke3-2" type="text" style={{ width: "33%" }} value={p3[1]} />
-                                        <Input className="picke3-3" type="text" style={{ width: "33%" }} value={p3[2]} />
-                                    </Col >
-                                </Row>
-                                <Row style={{ display: pickerF }}>
-                                    <Col >No point picked, default:</Col >
-                                </Row>
-                                <Row style={{ display: pickerF }}>
-                                    <Col >
-                                        <Input className="picke2-1" type="text" style={{ width: "33%" }} value={p4[0]} />
-                                        <Input className="picke2-2" type="text" style={{ width: "33%" }} value={p4[1]} />
-                                        <Input className="picke2-3" type="text" style={{ width: "33%" }} value={p4[2]} />
-                                    </Col >
-                                </Row>
-                            </InputGroup>
-
-                        </div>
-                    </div>
-                </Draggable>
-                <Draggable handle=".cellPicker" */}
-                {/* defaultPosition={{ x: 0, y: 0 }}
-                    position={null}
-                    grid={[1, 1]}
-                    scale={1}>
-                    <div style={{ display: displayBox3, position: "absolute", zIndex: "90", top: "250px", right: "20px" }}>
-                        <div style={{ width: "350px", background: boxBgColor, padding: "20px", lineHeight: "20px", display: "block" }}>
-                            <span className="cellPicker" style={{ display: "inline-block", width: "100%", textAlign: "center" }}>cellPicker</span>
-                            <InputGroup>
-                                <Row >
-                                    <Col >Pick at:</Col >
-                                </Row>
-                                <Row >
-                                    <Col >
-                                        <Input className="picke21-1" type="text" style={{ width: "33%" }} value={c1[0]} />
-                                        <Input className="picke21-2" type="text" style={{ width: "33%" }} value={c1[1]} />
-                                        <Input className="picke21-3" type="text" style={{ width: "33%" }} value={c1[2]} />
-
-                                    </Col >
-                                </Row>
-                                <Row style={{ display: picker2T }}>
-                                    <Col >Picked cell:</Col >
-                                </Row>
-                                <Row style={{ display: picker2T }}>
-                                    <Col >
-                                        <Input className="picke22" type="text" style={{ width: "30%" }} value={c2} />
-                                    </Col >
-                                </Row>
-                                <Row style={{ display: picker2T }}>
-                                    <Col >Picked:</Col >
-                                </Row>
-                                <Row style={{ display: picker2T }}>
-                                    <Col >
-                                        <Input className="picke23-1" type="text" style={{ width: "33%" }} value={c3[0]} />
-                                        <Input className="picke23-2" type="text" style={{ width: "33%" }} value={c3[1]} />
-                                        <Input className="picke23-3" type="text" style={{ width: "33%" }} value={c3[2]} />
-                                    </Col >
-                                </Row>
-                                <Row style={{ display: picker2F }}>
-                                    <Col >No cell picked, default:</Col >
-                                </Row>
-                                <Row style={{ display: picker2F }}>
-                                    <Col >
-                                        <Input className="picke2-1" type="text" style={{ width: "33%" }} value={c4[0]} />
-                                        <Input className="picke2-2" type="text" style={{ width: "33%" }} value={c4[1]} />
-                                        <Input className="picke2-3" type="text" style={{ width: "33%" }} value={c4[2]} />
-                                    </Col >
-                                </Row>
-                            </InputGroup>
-
-                        </div>
-                    </div>
-                </Draggable> */}
                 <div className="vtk-container" ref={this.container} style={{ "minHeight": "100px", "minWidth": "100px", "width": "100%", "height": "100vh" }} ></div>
             </div>
         )

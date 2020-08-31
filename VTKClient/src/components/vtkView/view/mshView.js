@@ -42,6 +42,7 @@ export default class mshView extends Component {
         }
         if (data.type === ".msh") {
             Rendering(model, this.container);
+            console.log(data)
             let points = JSON.parse(JSON.stringify(data.data[0]));
             let cells = JSON.parse(JSON.stringify(data.data[1]));
             //创建polydata数据

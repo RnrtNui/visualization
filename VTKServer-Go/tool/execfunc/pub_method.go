@@ -349,6 +349,10 @@ func DoesJSONExist(uploadFilePath string, fileName string) (string, string, stri
 		fileType = ".off"
 	case strings.Contains(fileName1, ".stl"):
 		fileType = ".off"
+	case strings.Contains(fileName1, ".stp"):
+		fileType = ".off"
+	case strings.Contains(fileName1, ".step"):
+		fileType = ".off"
 	case strings.Contains(fileName1, ".inp"):
 		fileType = ".inp"
 	case strings.Contains(fileName1, ".obj"):
@@ -437,7 +441,13 @@ func ProcessData(uploadFilePath string, proName string, fileName string, data st
 		jsonFilePath := filepath.Join(uploadFilePath, "dicom", jsonFile)
 		filePath := filepath.Join(uploadFilePath, "project", proName, "dataStr", fileName)
 		csvFilePath := filepath.Join(uploadFilePath, "dicom", fileName)
+		if !IsExists(filePath) {
+			return "文件不存在", "无", nil
+		}
 		csvArr, err := HandleCSV(filePath)
+		if len(csvArr[0]) == 0 {
+			return "数据为空", "无", err
+		}
 		if !strings.Contains(data, "/dicom/") {
 			err = SaveToJSON(csvArr, jsonFilePath)
 			err = SaveToCsv(csvArr, csvFilePath)
@@ -464,7 +474,13 @@ func ProcessData(uploadFilePath string, proName string, fileName string, data st
 		jsonFilePath := filepath.Join(uploadFilePath, "dicom", jsonFile)
 		jsonPFilePath := filepath.Join(uploadFilePath, "dicom", jsonPFile)
 		filePath := filepath.Join(uploadFilePath, "project", proName, "dataUstr", fileName)
+		if !IsExists(filePath) {
+			return "文件不存在", "无", nil
+		}
 		objdata, err := HandleVTK(filePath)
+		if len(objdata.POINTS) == 0 {
+			return "数据为空", "无", err
+		}
 		if !strings.Contains(data, "/dicom/") {
 			err = SaveToJSON(objdata, jsonFilePath)
 		}
@@ -481,7 +497,13 @@ func ProcessData(uploadFilePath string, proName string, fileName string, data st
 		jsonFilePath := filepath.Join(uploadFilePath, "dicom", jsonFile)
 		jsonPFilePath := filepath.Join(uploadFilePath, "dicom", jsonPFile)
 		filePath := filepath.Join(uploadFilePath, "project", proName, "dataUstr", fileName)
+		if !IsExists(filePath) {
+			return "文件不存在", "无", nil
+		}
 		objdata, err := HandleOFF(filePath)
+		if len(objdata.POINTS) == 0 {
+			return "数据为空", "无", err
+		}
 		if !strings.Contains(data, "/dicom/") {
 			err = SaveToJSON(objdata, jsonFilePath)
 		}
@@ -500,7 +522,9 @@ func ProcessData(uploadFilePath string, proName string, fileName string, data st
 		jsonFilePath := filepath.Join(uploadFilePath, "dicom", jsonFile)
 		jsonPFilePath := filepath.Join(uploadFilePath, "dicom", jsonPFile)
 		filePath := filepath.Join(uploadFilePath, "project", proName, "dataUstr", fileName)
-		//objdata, err := binarypro.BackSTLInfo(filePath)
+		if !IsExists(filePath) {
+			return "文件不存在", "无", nil
+		}
 		var err error
 		objdata := &StlData{}
 		if b := IsBinary(filePath); b {
@@ -508,7 +532,9 @@ func ProcessData(uploadFilePath string, proName string, fileName string, data st
 		} else {
 			objdata, err = HandleStl(filePath)
 		}
-
+		if len(objdata.POINTS) == 0 {
+			return "数据为空", "无", err
+		}
 		if !strings.Contains(data, "/dicom/") {
 			err = SaveToJSON(&objdata, jsonFilePath)
 		}
@@ -526,7 +552,13 @@ func ProcessData(uploadFilePath string, proName string, fileName string, data st
 		jsonFilePath := filepath.Join(uploadFilePath, "dicom", jsonFile)
 		jsonPFilePath := filepath.Join(uploadFilePath, "dicom", jsonPFile)
 		filePath := filepath.Join(uploadFilePath, "project", proName, "dataUstr", fileName)
+		if !IsExists(filePath) {
+			return "文件不存在", "无", nil
+		}
 		objdata, err := HandleInp(filePath)
+		if len(objdata.POINTS) == 0 {
+			return "数据为空", "无", err
+		}
 		if !strings.Contains(data, "/dicom/") {
 			err = SaveToJSON(objdata, jsonFilePath)
 		}
@@ -558,7 +590,13 @@ func ProcessData(uploadFilePath string, proName string, fileName string, data st
 			tfileName = fileName
 		}
 		filePath := filepath.Join(uploadFilePath, "project", proName, "dataUstr", tfileName)
+		if !IsExists(filePath) {
+			return "文件不存在", "无", nil
+		}
 		strArrs, err := HandleMSH(filePath)
+		if len(strArrs) == 0 {
+			return "数据为空", "无", err
+		}
 		if !strings.Contains(data, "/dicom/") {
 			err = SaveToJSON(strArrs, jsonFilePath)
 		}
@@ -577,7 +615,13 @@ func ProcessData(uploadFilePath string, proName string, fileName string, data st
 		filePath := filepath.Join(uploadFilePath, "project", proName, "dataUstr", fileName)
 		tfileName := strings.Replace(fileName, ".msh", ".res", -1)
 		tfilePath := filepath.Join(uploadFilePath, "project", proName, "dataUstr", tfileName)
+		if !IsExists(filePath) || !IsExists(tfilePath) {
+			return "文件不存在", "无", nil
+		}
 		strArrs, err := HandlePostMSH(filePath, tfilePath)
+		if len(strArrs.StrCoord) == 0 {
+			return "数据为空", "无", err
+		}
 		if !strings.Contains(data, "/dicom/") {
 			err = SaveToJSON(strArrs, jsonFilePath)
 		}
@@ -605,7 +649,13 @@ func ProcessData(uploadFilePath string, proName string, fileName string, data st
 		tfileRes := strings.Replace(strings.Replace(ffileName, "F", "T", -1), ".msh", ".res", -1)
 		tfilePathRes := filepath.Join(uploadFilePath, "project", proName, "dataUstr", tfileRes)
 		filePath := filepath.Join(uploadFilePath, "project", proName, "dataUstr", ffileName)
+		if !IsExists(filePath) || !IsExists(tfilePathRes) || !IsExists(filePathRes) {
+			return "文件不存在", "无", nil
+		}
 		strArrs, err := HandleFlaviaMSH(tfilePathRes, filePathRes, filePath)
+		if len(strArrs.Point) == 0 {
+			return "数据为空", "无", err
+		}
 		if !strings.Contains(data, "/dicom/") {
 			err = SaveToJSON(strArrs, jsonFilePath)
 		}
@@ -640,7 +690,13 @@ func DataPro(uploadFilePath string, fileName string, data string, pdata string) 
 		jsonFilePath := filepath.Join(uploadFilePath, "dicom", jsonFile)
 		filePath := filepath.Join(uploadFilePath, "process", fileName)
 		csvFilePath := filepath.Join(uploadFilePath, "dicom", fileName)
+		if !IsExists(filePath) {
+			return "文件不存在", "无", nil
+		}
 		csvArr, err := HandleCSV(filePath)
+		if len(csvArr[0]) == 0 {
+			return "数据为空", "无", err
+		}
 		if !strings.Contains(data, "/dicom/") {
 			err = SaveToJSON(csvArr, jsonFilePath)
 			err = SaveToCsv(csvArr, csvFilePath)
@@ -667,7 +723,13 @@ func DataPro(uploadFilePath string, fileName string, data string, pdata string) 
 		jsonFilePath := filepath.Join(uploadFilePath, "dicom", jsonFile)
 		jsonPFilePath := filepath.Join(uploadFilePath, "dicom", jsonPFile)
 		filePath := filepath.Join(uploadFilePath, "process", fileName)
+		if !IsExists(filePath) {
+			return "文件不存在", "无", nil
+		}
 		objdata, err := HandleVTK(filePath)
+		if len(objdata.POINTS) == 0 {
+			return "数据为空", "无", err
+		}
 		if !strings.Contains(data, "/dicom/") {
 			err = SaveToJSON(objdata, jsonFilePath)
 		}
@@ -684,7 +746,13 @@ func DataPro(uploadFilePath string, fileName string, data string, pdata string) 
 		jsonFilePath := filepath.Join(uploadFilePath, "dicom", jsonFile)
 		jsonPFilePath := filepath.Join(uploadFilePath, "dicom", jsonPFile)
 		filePath := filepath.Join(uploadFilePath, "process", fileName)
+		if !IsExists(filePath) {
+			return "文件不存在", "无", nil
+		}
 		objdata, err := HandleOFF(filePath)
+		if len(objdata.POINTS) == 0 {
+			return "数据为空", "无", err
+		}
 		if !strings.Contains(data, "/dicom/") {
 			err = SaveToJSON(objdata, jsonFilePath)
 		}
@@ -703,7 +771,9 @@ func DataPro(uploadFilePath string, fileName string, data string, pdata string) 
 		jsonFilePath := filepath.Join(uploadFilePath, "dicom", jsonFile)
 		jsonPFilePath := filepath.Join(uploadFilePath, "dicom", jsonPFile)
 		filePath := filepath.Join(uploadFilePath, "process", fileName)
-		//objdata, err := binarypro.BackSTLInfo(filePath)
+		if !IsExists(filePath) {
+			return "文件不存在", "无", nil
+		}
 		var err error
 		objdata := &StlData{}
 		if b := IsBinary(filePath); b {
@@ -711,7 +781,36 @@ func DataPro(uploadFilePath string, fileName string, data string, pdata string) 
 		} else {
 			objdata, err = HandleStl(filePath)
 		}
-
+		if len(objdata.POINTS) == 0 {
+			return "数据为空", "无", err
+		}
+		if !strings.Contains(data, "/dicom/") {
+			err = SaveToJSON(&objdata, jsonFilePath)
+		}
+		if pdata != "yes" {
+			err = SaveToJSON(&objdata.POINTS, jsonPFilePath)
+		}
+		if err != nil {
+			beego.Error("read vtk file is fail :", err)
+			return "", "无stl文件", err
+		}
+		beego.Debug("web obj:", len(objdata.CELLS))
+		//返回前端数据信息
+		return objdata, ".off", err
+	case strings.Contains(strings.ToLower(fileName), ".stp") ||
+		strings.Contains(strings.ToLower(fileName), ".step"):
+		jsonFilePath := filepath.Join(uploadFilePath, "dicom", jsonFile)
+		jsonPFilePath := filepath.Join(uploadFilePath, "dicom", jsonPFile)
+		filePath := filepath.Join(uploadFilePath, "process", fileName)
+		if !IsExists(filePath) {
+			return "文件不存在", "无", nil
+		}
+		var err error
+		objdata := &StpData{}
+		objdata, err = HandleStp(filePath)
+		if len(objdata.POINTS) == 0 {
+			return "数据为空", "无", err
+		}
 		if !strings.Contains(data, "/dicom/") {
 			err = SaveToJSON(&objdata, jsonFilePath)
 		}
@@ -729,7 +828,13 @@ func DataPro(uploadFilePath string, fileName string, data string, pdata string) 
 		jsonFilePath := filepath.Join(uploadFilePath, "dicom", jsonFile)
 		jsonPFilePath := filepath.Join(uploadFilePath, "dicom", jsonPFile)
 		filePath := filepath.Join(uploadFilePath, "process", fileName)
+		if !IsExists(filePath) {
+			return "文件不存在", "无", nil
+		}
 		objdata, err := HandleInp(filePath)
+		if len(objdata.POINTS) == 0 {
+			return "数据为空", "无", err
+		}
 		if !strings.Contains(data, "/dicom/") {
 			err = SaveToJSON(objdata, jsonFilePath)
 		}
@@ -761,7 +866,13 @@ func DataPro(uploadFilePath string, fileName string, data string, pdata string) 
 			tfileName = fileName
 		}
 		filePath := filepath.Join(uploadFilePath, "process", tfileName)
+		if !IsExists(filePath) {
+			return "文件不存在", "无", nil
+		}
 		strArrs, err := HandleMSH(filePath)
+		if len(strArrs) == 0 {
+			return "数据为空", "无", err
+		}
 		if !strings.Contains(data, "/dicom/") {
 			err = SaveToJSON(strArrs, jsonFilePath)
 		}
@@ -780,7 +891,13 @@ func DataPro(uploadFilePath string, fileName string, data string, pdata string) 
 		filePath := filepath.Join(uploadFilePath, "process", fileName)
 		tfileName := strings.Replace(fileName, ".msh", ".res", -1)
 		tfilePath := filepath.Join(uploadFilePath, "process", tfileName)
+		if !IsExists(filePath) || !IsExists(tfilePath) {
+			return "文件不存在", "无", nil
+		}
 		strArrs, err := HandlePostMSH(filePath, tfilePath)
+		if len(strArrs.StrCoord) == 0 {
+			return "数据为空", "无", err
+		}
 		if !strings.Contains(data, "/dicom/") {
 			err = SaveToJSON(strArrs, jsonFilePath)
 		}
@@ -808,7 +925,13 @@ func DataPro(uploadFilePath string, fileName string, data string, pdata string) 
 		tfileRes := strings.Replace(strings.Replace(ffileName, "F", "T", -1), ".msh", ".res", -1)
 		tfilePathRes := filepath.Join(uploadFilePath, "process", tfileRes)
 		filePath := filepath.Join(uploadFilePath, "process", ffileName)
+		if !IsExists(filePath) || !IsExists(filePathRes) || !IsExists(tfilePathRes) {
+			return "文件不存在", "无", nil
+		}
 		strArrs, err := HandleFlaviaMSH(tfilePathRes, filePathRes, filePath)
+		if len(strArrs.Point) == 0 {
+			return "数据为空", "无", err
+		}
 		if !strings.Contains(data, "/dicom/") {
 			err = SaveToJSON(strArrs, jsonFilePath)
 		}

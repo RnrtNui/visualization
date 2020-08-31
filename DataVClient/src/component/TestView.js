@@ -24,13 +24,13 @@ class TestView extends Component {
 
 	componentDidMount = () => {
 		let _this = this;
+		document.getElementById("root").style.backgroundColor="#000";
 		// 获取数据
 		var myChart1 = echarts.init(document.getElementById('main'));
 		// 绘制图表
 		// let option = {};
 		if (this.props.match.params.fileName) {
 			let fileName = this.props.match.params.fileName;
-			
 			let xhr = new XMLHttpRequest();
 			xhr.addEventListener("progress", _this.uploadProgress, false);
 			xhr.open('GET', `/data/dicom/${fileName.slice(0,fileName.lastIndexOf('.'))}_POINTS.json`, true);
@@ -58,13 +58,11 @@ class TestView extends Component {
 				}
 			};
 		}
-		
 	};
+
 	uploadProgress = (evt) => {
-		console.log(evt)
 		if (evt.lengthComputable) {
-			var percentComplete = Math.round(evt.loaded * 100 / evt.total);
-			console.log(percentComplete.toString());
+			// var percentComplete = Math.round(evt.loaded * 100 / evt.total);
 		}
 		else {
 			console.log('unable to compute');
@@ -97,7 +95,6 @@ class TestView extends Component {
 				let xlen = Number(arrx[arrx.length - 1]) - Number(arrx[0]);
 				let ylen = Number(arry[arry.length - 1]) - Number(arry[0]);
 				let zlen = Number(arr[arr.length - 1]) - Number(arr[0]);
-				console.log(xlen,ylen,zlen)
 
 				let xcen = (Number(arrx[arrx.length - 1]) + Number(arrx[0])) / 2;
 				let ycen = (Number(arry[arry.length - 1]) + Number(arry[0])) / 2;
@@ -235,12 +232,13 @@ class TestView extends Component {
 				myChart.setOption(option);
 			}
 		}
+		let _this = this;
 		if (window.attachEvent) {//判断是不是IE
 			window.onresize = function () {
 				_this.state.myChart.resize();
 			}
 		} else if (window.addEventListener) {//如果非IE执行以下方法
-			window.addEventListener("resize", () => {
+				window.addEventListener("resize", () => {
 				_this.state.myChart.resize();
 			});
 		}

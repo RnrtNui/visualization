@@ -130,9 +130,10 @@ export default class offView extends Component {
                 polys: {
                     vtkClass: 'vtkCellArray',
                     dataType: "Float32Array",
-                    values: data.data.CELLS,
+                    values: data.data.CELLS.slice(2760,5520),
                 },
             });
+            console.log(polydata2.getState())
             const mapper2 = vtkMapper.newInstance({
                 interpolateScalarsBeforeMapping: true
             });
