@@ -9,8 +9,13 @@ import Draggable from 'react-draggable';
 import React, { Component } from 'react';
 import { Slider, Input, Col, Row } from "antd";
 import vtkActor from 'vtk.js/Sources/Rendering/Core/Actor';
+import { FieldAssociations } from 'vtk.js/Sources/Common/DataModel/DataSet/Constants';
+import vtkOpenGLHardwareSelector from 'vtk.js/Sources/Rendering/OpenGL/HardwareSelector';
 import vtkMapper from 'vtk.js/Sources/Rendering/Core/Mapper';
 import { Rendering, Screen, gl, Axis, reassignManipulators, changeManipulators, showBounds } from "../common/index";
+import vtkSphereSource from 'vtk.js/Sources/Filters/Sources/SphereSource';
+import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder';
+import vtkAppendPolyData from 'vtk.js/Sources/Filters/General/AppendPolyData';
 
 const InputGroup = Input.Group;
 
@@ -19,10 +24,7 @@ export default class offView extends Component {
         super(props);
         this.state = {
             data: [], activeScalar: [], model: {}, canvas: {},
-            useScalar: false, boxBgColor: "#ccc", value: 0,
-            displayBox: "none", points: [], cells: [], pointData: [0, 1], min: null, max: null,
-            scalarBar: "0", mode: "rainbow", scale: [], unique: [], inputValue: 1,
-            cellDataName: [], vector: false, ArrowSize: 1, vectorData: [], OpenGlRW: {}
+            inputX: 0, inputY: 0, inputZ: 0, OpenGlRW: {}
         }
         this.container = React.createRef();
         this.container1 = React.createRef();
@@ -31,7 +33,7 @@ export default class offView extends Component {
     // 渲染
     result = () => {
         let { data } = this.props;
-        let { model } = this.state;
+        let { model, inputX, inputY, inputZ } = this.state;
         let vtkBox = document.getElementsByClassName('vtk-container')[0];
         if (vtkBox) {
             vtkBox.innerHTML = null;
@@ -39,19 +41,12 @@ export default class offView extends Component {
         //创建场景
         Rendering(model, this.container);
         let OpenGlRW = model.fullScreenRenderer.getOpenGLRenderWindow();
-        let points = [
-            13.2321585512394, 24.4431845869678, 5.27382404843011,
-            13.479771209699, 24.8714622036826, 5.2566345296015,
-            13.9108569522462, 24.6283107384847, 5.2651005032975,
-            13.2361313508423, 24.5113724286897, 7.02995475357321,
-            13.4834742155562, 24.9391509112416, 7.01185324522814,
-            13.9143588038453, 24.6967645867095, 7.02123120843858,
-            13.240079738303, 24.5795180463945, 8.78608715030275,
-            13.4871570435526, 25.0068380244801, 8.76802740597414,
-            13.9178389218925, 24.7651736894471, 8.77736360516905,
-            13.2440041894551, 24.6476222630404, 10.5422212039666,
-            13.4908199542874, 25.0745224975197, 10.5251141258302,
-            13.9212977382339, 24.8335389337785, 10.533497658834,
+        //点
+
+        // console.log(actor.getMapper().getInputData().getPoints().getData());
+
+        //**************************************************************** */
+        let point2 = [
             14.723465037636, 23.7934552794615, 10.5422245823181,
             14.9697636026552, 24.2206541182234, 10.525117504234,
             14.5458268239756, 24.4729670333677, 10.5335010371854,
@@ -64,123 +59,33 @@ export default class offView extends Component {
             14.5523395260867, 23.6809777457606, 5.2738240484295,
             14.7994324928042, 24.1095554066427, 5.25663452960089,
             14.3733142757018, 24.3613108782988, 5.26510050329689,
-            29.3472605242604, 0.986214595872418, 3.78254759356271,
-            29.8388243051692, 0.986067332587343, 3.77411088561136,
-            29.8471157533235, 0.494573462559118, 3.78254759356271,
-            29.3887617027557, 1.02840915544003, 6.19987229221783,
-            29.8796024141642, 1.02823300595758, 6.18978069441764,
-            29.8886052205013, 0.537474791118491, 6.19987229221722,
-            29.4301748765547, 1.07060374159598, 8.6171985141179,
-            29.9203257088892, 1.07042833613428, 8.60714954193784,
-            29.9300052341523, 0.580373098675937, 8.61719851411729,
-            29.4715011526252, 1.11279835296375, 11.0345261804025,
-            29.9609939009263, 1.11265232831158, 11.0261604336826,
-            29.971316938546, 0.623268422919438, 11.0345261804025,
-            13.8622790802837, 23.5024515804398, 4.29999999999999,
-            14.2877994773275, 23.2567772646609, 4.29999999999998,
-            14.2952258322446, 23.2524896566517, 4.79127379678135,
-            14.1298320162645, 23.9609282067007, 4.29999999999877,
-            14.5496682114311, 23.7102629205689, 4.30241467082884,
-            14.4279388624965, 23.4823553659869, 4.79127385084954,
-            14.359903654773, 24.3476911987321, 4.73404625688157,
-            14.7801684957282, 24.0945224437398, 4.7314786833783,
-            14.5437111719279, 23.6753025959935, 5.00829659093551,
-            14.3733142757018, 24.3613108782988, 5.26510050329605,
-            14.7994324928042, 24.1095554066427, 5.25663452960006,
-            14.5523395260867, 23.6809777457606, 5.27382404842938,
-            12.9896338277731, 24.0062735518852, 4.79127379678135,
-            12.9970601826891, 24.0019859438741, 4.29999999999998,
-            13.4225805797329, 23.7563116280951, 4.29999999999999,
-            13.1223468563894, 24.2361392621626, 4.79127385084952,
-            13.2588559139061, 24.4555137480178, 4.30241467082918,
-            13.6858565171272, 24.2172575806419, 4.29999999999879,
-            13.2315579044517, 24.4328746381926, 5.00829659093591,
-            13.4763842804682, 24.8472626113876, 4.73147868337891,
-            13.9057672742146, 24.6098869602973, 4.7340462568825,
-            13.2321585512394, 24.4431845869678, 5.27382404843011,
-            13.4797712096991, 24.8714622036826, 5.2566345296015,
-            13.9108569522462, 24.6283107384847, 5.2651005032975,
-            28.8474101405335, 0.977639379852068, 3.29127379678135,
-            28.8474101405329, 0.969064163831718, 2.79999999999998,
-            28.8474101405328, 0.477715532273862, 2.79999999999999,
-            29.116140967336, 0.977639380926874, 3.29127385835695,
-            29.3764893478679, 0.969139949803669, 2.80434177542878,
-            29.3847974920077, 0.482164512755073, 2.79999999999929,
-            29.3426429301613, 0.981519779553613, 3.51358174679489,
-            29.8252979027411, 0.976822022817849, 3.24444744362019,
-            29.8378052394805, 0.489722233165866, 3.24461714901677,
-            29.3472605242604, 0.986214595872418, 3.78254759356272,
-            29.8388243051692, 0.986067332587347, 3.77411088561137,
-            29.8471157533235, 0.494573462559118, 3.78254759356272,
-            -29.4715011526252, 1.11279835296382, 11.0345261804026,
-            -29.9609939009263, 1.11265232831165, 11.0261604336827,
-            -29.971316938546, 0.623268422919505, 11.0345261804026,
-            -29.4301748765765, 1.07060374159603, 8.61719851411747,
-            -29.9203257089196, 1.07042833611839, 8.60714954193753,
-            -29.9300052341523, 0.580373098675597, 8.61719851411724,
-            -29.3887617027509, 1.02840915544009, 6.19987229221778,
-            -29.8796024141427, 1.02823300594599, 6.18978069441808,
-            -29.8886052205013, 0.53747479111818, 6.1998722922171,
-            -29.3472605242604, 0.986214595872479, 3.78254759356245,
-            -29.8388243051692, 0.986067332587407, 3.7741108856111,
-            -29.8471157533235, 0.49457346255918, 3.78254759356245,
-        ]; //点
-        let cells = [
-            3, 0, 1, 2,
-            3, 3, 4, 5,
-            3, 6, 7, 8,
-            3, 9, 10, 11,
-            3, 12, 13, 14,
-            3, 15, 16, 17,
-            3, 18, 19, 20,
-            3, 21, 22, 23,
-            3, 24, 25, 26,
-            3, 27, 28, 29,
-            3, 30, 31, 32,
-            3, 33, 34, 35,
-            3, 36, 37, 38,
-            3, 39, 40, 41,
-            3, 42, 43, 44,
-            3, 45, 46, 47,
-            3, 48, 49, 50,
-            3, 51, 52, 53,
-            3, 54, 55, 56,
-            3, 57, 58, 59,
-            3, 60, 61, 62,
-            3, 63, 64, 65,
-            3, 66, 67, 68,
-            3, 69, 70, 71,
-            3, 72, 73, 74,
-            3, 75, 76, 77,
-            3, 78, 79, 80,
-            3, 81, 82, 83,
-        ]   //单元
-        let polydata = vtk({
+        ];   //单元
+        let polydata2 = vtk({
             vtkClass: 'vtkPolyData',
             points: {
                 vtkClass: 'vtkPoints',
                 dataType: 'Float32Array',
                 numberOfComponents: 3,
-                values: points,
+                values: point2,
             },
-            lines: {
+            polys: {
                 vtkClass: 'vtkCellArray',
                 dataType: "Float32Array",
-                values: cells,
+                values: [
+                    3, 0, 1, 2,
+                    3, 3, 4, 5,
+                    3, 6, 7, 8,
+                    3, 9, 10, 11,
+                ],
             },
         });
-        console.log(polydata.getState())
-        const mapper = vtkMapper.newInstance({
+        const mapper1 = vtkMapper.newInstance({
             interpolateScalarsBeforeMapping: true
         });
-        mapper.setInputData(polydata);
-        const actor = vtkActor.newInstance();
-        model.mapper = mapper;
-        model.actor = actor;
-        actor.setMapper(mapper);
-        model.renderer.addActor(actor);
-        model.interactorStyle.setCenterOfRotation(mapper.getCenter())
-        model.camera = model.renderer.getActiveCamera()
+        mapper1.setInputData(polydata2);
+        const actor1 = vtkActor.newInstance();
+        actor1.setMapper(mapper1);
+        model.renderer.addActor(actor1);
         reassignManipulators(model);
         this.setState({
             OpenGlRW: OpenGlRW
@@ -193,16 +98,234 @@ export default class offView extends Component {
         this.result();
         Axis(this.state.model);
     };
-
+    InputMapperRangeX = (e) => {
+        this.setState({
+            inputX: e.target.value
+        })
+    }
+    InputMapperRangeY = (e) => {
+        this.setState({
+            inputY: e.target.value
+        })
+    }
+    InputMapperRangeZ = (e) => {
+        this.setState({
+            inputZ: e.target.value
+        })
+    }
     render() {
         let {
-            OpenGlRW
+            OpenGlRW, model, inputX, inputY, inputZ
         } = this.state;
         if (OpenGlRW.initialize) gl(OpenGlRW);
+        if (model.renderer) {
+            if(model.actor) model.renderer.removeActor(model.actor);
+            let point1 = [
+                13.2321585512394, 24.4431845869678, 5.27382404843011,
+                13.479771209699, 24.8714622036826, 5.2566345296015,
+                13.9108569522462, 24.6283107384847, 5.2651005032975,
+                13.2361313508423, 24.5113724286897, 7.02995475357321,
+                13.4834742155562, 24.9391509112416, 7.01185324522814,
+                13.9143588038453, 24.6967645867095, 7.02123120843858,
+                13.240079738303, 24.5795180463945, 8.78608715030275,
+                13.4871570435526, 25.0068380244801, 8.76802740597414,
+                13.9178389218925, 24.7651736894471, 8.77736360516905,
+                13.2440041894551, 24.6476222630404, 10.5422212039666,
+                13.4908199542874, 25.0745224975197, 10.5251141258302,
+                13.9212977382339, 24.8335389337785, 10.533497658834,
+            ];
+            let polydata1 = vtk({
+                vtkClass: 'vtkPolyData',
+                points: {
+                    vtkClass: 'vtkPoints',
+                    dataType: 'Float32Array',
+                    numberOfComponents: 3,
+                    values: point1,
+                },
+                polys: {
+                    vtkClass: 'vtkCellArray',
+                    dataType: "Float32Array",
+                    values: [
+                        3, 0, 1, 2,
+                        3, 3, 4, 5,
+                        3, 6, 7, 8,
+                        3, 9, 10, 11,
+                    ],
+                },
+            });
+            vtkMatrixBuilder
+                .buildFromDegree()
+                .translate(inputX, inputY, inputZ)
+                .apply(polydata1.getPoints().getData());
+            const source = vtkAppendPolyData.newInstance();
+            source.setInputData(polydata1);
+            const mapper = vtkMapper.newInstance({
+                interpolateScalarsBeforeMapping: true
+            });
+            mapper.setInputConnection(source.getOutputPort());
+            const actor = vtkActor.newInstance();
+            model.actor=actor;
+            actor.setMapper(mapper);
+            model.renderer.addActor(actor);
+            model.renderWindow.render();
+
+            const openGLRenderWindow = model.interactor.getView();
+            const hardwareSelector = vtkOpenGLHardwareSelector.newInstance({
+                captureZValues: true,
+            });
+            hardwareSelector.setFieldAssociation(
+                FieldAssociations.FIELD_ASSOCIATION_POINTS
+            );
+            hardwareSelector.attach(openGLRenderWindow, model.renderer);
+            // ----------------------------------------------------------------------------
+            // Create Picking pointer
+            // ----------------------------------------------------------------------------
+            const pointerSource = vtkSphereSource.newInstance({
+                phiResolution: 15,
+                thetaResolution: 15,
+                radius: 0.01,
+            });
+            const pointerMapper = vtkMapper.newInstance();
+            const pointerActor = vtkActor.newInstance();
+            pointerActor.setMapper(pointerMapper);
+            pointerMapper.setInputConnection(pointerSource.getOutputPort());
+            model.renderer.addActor(pointerActor);
+            let container = document.querySelectorAll(".vtk-container")[0];
+            // ----------------------------------------------------------------------------
+            // Create Mouse listener for picking on mouse move
+            // ----------------------------------------------------------------------------
+            function eventToWindowXY(event) {
+                // We know we are full screen => window.innerXXX
+                // Otherwise we can use pixel device ratio or else...
+                const { clientX, clientY } = event;
+                let rec = container.getBoundingClientRect();
+                const [width, height] = openGLRenderWindow.getSize();
+                const x = Math.round((width * clientX) / container.clientWidth - rec.left);
+                const y = Math.round(height * (1 - clientY / container.clientHeight) + rec.top);
+                // Need to flip Y
+                return [x, y];
+            }
+            // ----------------------------------------------------------------------------
+            const WHITE = [1, 1, 1];
+            const GREEN = [0.1, 0.8, 0.1];
+            let needGlyphCleanup = false;
+            let lastProcessedActor = null;
+            const updateWorldPosition = (worldPosition) => {
+                pointerActor.setVisibility(true);
+                pointerActor.setPosition(worldPosition);
+                model.renderWindow.render();
+            };
+            function processSelections(selections) {
+                if (!selections || selections.length === 0) {
+                    model.renderer.getActors().forEach((a) => a.getProperty().setColor(...WHITE));
+                    model.renderWindow.render();
+                    lastProcessedActor = null;
+                    return;
+                }
+                const { worldPosition, prop } = selections[0].getProperties();
+                if (lastProcessedActor === prop) {
+                    // Skip render call when nothing change
+                    updateWorldPosition(worldPosition);
+                    return;
+                }
+                lastProcessedActor = prop;
+                // Make the picked actor green
+                model.renderer.getActors().forEach((a) => a.getProperty().setColor(...WHITE));
+                prop.getProperty().setColor(...GREEN);
+                // We hit the glyph, let's scale the picked glyph
+                if (needGlyphCleanup) {
+                    needGlyphCleanup = false;
+                }
+                // Update picture for the user so we can see the green one
+                updateWorldPosition(worldPosition);
+            }
+            // ----------------------------------------------------------------------------
+            function pickOnMouseEvent(event) {
+                if (model.interactor.isAnimating()) {
+                    // We should not do picking when interacting with the scene
+                    return;
+                }
+                const [x, y] = eventToWindowXY(event);
+                hardwareSelector.setArea(x, y, x, y);
+                hardwareSelector.releasePixBuffers();
+
+                if (hardwareSelector.captureBuffers()) {
+                    processSelections(hardwareSelector.generateSelection(x, y, x, y));
+                } else {
+                    processSelections(null);
+                }
+            }
+            function throttle(callback, delay) {
+                let isThrottled = false;
+                let argsToUse = null;
+                function next() {
+                    isThrottled = false;
+                    if (argsToUse !== null) {
+                        wrapper(...argsToUse); // eslint-disable-line
+                        argsToUse = null;
+                    }
+                }
+                function wrapper(...args) {
+                    if (isThrottled) {
+                        argsToUse = args;
+                        return;
+                    }
+                    isThrottled = true;
+                    callback(...args);
+                    setTimeout(next, delay);
+                }
+                return wrapper;
+            }
+            const throttleMouseHandler = throttle(pickOnMouseEvent, 10);
+            container.addEventListener('mousemove', throttleMouseHandler);
+        }
         return (
             <div>
                 <div className="vtk-container" ref={this.container} style={{ "minHeight": "100px", "minWidth": "100px", "width": "100%", "height": "100vh" }} ></div>
-            </div>
+                <Input.Group compact style={{ position: "absolute", left: "0", top: "0" }}>
+                    <Input style={{ width: 45, textAlign: 'center' }} placeholder={inputX} onChange={this.InputMapperRangeX} />
+                    <Input
+                        className="site-input-split"
+                        style={{
+                            width: 30,
+                            borderLeft: 0,
+                            borderRight: 0,
+                            pointerEvents: 'none',
+                        }}
+                        placeholder="-"
+                        disabled
+                    />
+                    <Input
+                        className="site-input-right"
+                        style={{
+                            width: 45,
+                            textAlign: 'center',
+                        }}
+                        onChange={this.InputMapperRangeY}
+                        placeholder={inputY}
+                    />
+                    <Input
+                        className="site-input-split"
+                        style={{
+                            width: 30,
+                            borderLeft: 0,
+                            borderRight: 0,
+                            pointerEvents: 'none',
+                        }}
+                        placeholder="-"
+                        disabled
+                    />
+                    <Input
+                        className="site-input-right"
+                        style={{
+                            width: 45,
+                            textAlign: 'center',
+                        }}
+                        onChange={this.InputMapperRangeZ}
+                        placeholder={inputZ}
+                    />
+                </Input.Group>
+            </div >
         )
     }
 }

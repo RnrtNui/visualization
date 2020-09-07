@@ -18,11 +18,14 @@ import ArrowSource from 'vtk.js/Sources/Filters/Sources/ArrowSource';
 import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder';
 import vtkPlaneSource from 'vtk.js/Sources/Filters/Sources/PlaneSource';
 import vtkArrowSource from 'vtk.js/Sources/Filters/Sources/ArrowSource';
+// import vtkSphereSource from 'vtk.js/Sources/Filters/Sources/SphereSource';
 import vtkGlyph3DMapper from 'vtk.js/Sources/Rendering/Core/Glyph3DMapper';
 import vtkOutlineFilter from 'vtk.js/Sources/Filters/General/OutlineFilter';
 import vtkAppendPolyData from 'vtk.js/Sources/Filters/General/AppendPolyData';
 import style from 'vtk.js/Examples/Geometry/SpheresAndLabels/style.module.css';
+import { FieldAssociations } from 'vtk.js/Sources/Common/DataModel/DataSet/Constants';
 import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps';
+import vtkOpenGLHardwareSelector from 'vtk.js/Sources/Rendering/OpenGL/HardwareSelector';
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
 import vtkFullScreenRenderWindow from 'vtk.js/Sources/Rendering/Misc/FullScreenRenderWindow';
 import vtkPixelSpaceCallbackMapper from 'vtk.js/Sources/Rendering/Core/PixelSpaceCallbackMapper';
@@ -381,30 +384,118 @@ export const changeManipulators = (model, opt, keydown, useLight, useAxis, scala
         model.actor.getProperty().setOpacity(inputValue);
     }
 
-    //光照
+    //灯光
     if (useLight) {
         if (model.renderer) {
-            let Light = vtkLight.newInstance();
-            Light.setLightTypeToHeadLight();
-            Light.setTransformMatrix(vtkMatrixBuilder
-                .buildFromDegree()
-                .translate(...model.renderer.getActors()[0].getCenter()))
-            Light.setPositional(true);
-            model.renderer.addLight(Light);
-            console.log(model.renderer);
-            Light.setTransformMatrix(vtkMatrixBuilder.buildFromDegree());
-            model.renderWindow.getInteractor().onMouseMove((callData) => {
-                let a1 = model.renderWindow.getViews()[0].displayToWorld(callData.position.x, callData.position.y, 10, model.renderer)
-                let pos = model.renderer.worldToView(a1[0], a1[1], a1[2]);
-                pos[2] = model.renderer.getActiveCamera().getPosition()[2];
-                Light.setPosition(pos);
-                Light.setColor([0, 0, 1]);
-                Light.setConeAngle(10);
-                Light.setFocalPoint([0, 0, 0]);
-                Light.setShadowAttenuation(1);
-                model.renderWindow.render();
+            const openGLRenderWindow = model.interactor.getView();
+            const hardwareSelector = vtkOpenGLHardwareSelector.newInstance({
+                captureZValues: true,
             });
+            hardwareSelector.setFieldAssociation(
+                FieldAssociations.FIELD_ASSOCIATION_POINTS
+            );
+            hardwareSelector.attach(openGLRenderWindow, model.renderer);
+            // ----------------------------------------------------------------------------
+            // Create Picking pointer
+            // ----------------------------------------------------------------------------
+            let container = document.querySelectorAll(".vtk-container")[0];
+            const Light = vtkLight.newInstance({
+                color: [1, 1, 1],
+                focalPoint: [0, 0, 0],
+                positional: false,
+                exponent: 1,
+                coneAngle: 30,
+                attenuationValues: [1, 0, 0],
+                transformMatrix: null,
+                lightType: 'HeadLight',
+                shadowAttenuation: 1,
+                direction: [0, 0, 0],
+            })
+            model.renderer.addLight(Light);
             model.Light = Light;
+            // ----------------------------------------------------------------------------
+            // Create Mouse listener for picking on mouse move
+            // ----------------------------------------------------------------------------
+            function eventToWindowXY(event) {
+                // We know we are full screen => window.innerXXX
+                // Otherwise we can use pixel device ratio or else...
+                const { clientX, clientY } = event;
+                let rec = container.getBoundingClientRect();
+                const [width, height] = openGLRenderWindow.getSize();
+                const x = Math.round((width * clientX) / container.clientWidth - rec.left);
+                const y = Math.round(height * (1 - clientY / container.clientHeight) + rec.top);
+                // Need to flip Y
+                return [x, y];
+            }
+            // ----------------------------------------------------------------------------
+            const WHITE = [1, 1, 1];
+            const GREEN = [0.1, 0.8, 0.1];
+            let needGlyphCleanup = false;
+            let lastProcessedActor = null;
+            const updateWorldPosition = (worldPosition) => {
+                Light.setPosition(worldPosition);
+                model.renderWindow.render();
+            };
+            function processSelections(selections) {
+                if (!selections || selections.length === 0) {
+                    lastProcessedActor = null;
+                    return;
+                }
+                const { worldPosition, prop } = selections[0].getProperties();
+                if (lastProcessedActor === prop) {
+                    // Skip render call when nothing change
+                    updateWorldPosition(worldPosition);
+                    return;
+                }
+                lastProcessedActor = prop;
+                // Make the picked actor green
+                // prop.getProperty().setColor(...GREEN);
+                // We hit the glyph, let's scale the picked glyph
+                if (needGlyphCleanup) {
+                    needGlyphCleanup = false;
+                }
+                // Update picture for the user so we can see the green one
+                updateWorldPosition(worldPosition);
+            }
+            // ----------------------------------------------------------------------------
+            function pickOnMouseEvent(event) {
+                if (model.interactor.isAnimating()) {
+                    // We should not do picking when interacting with the scene
+                    return;
+                }
+                const [x, y] = eventToWindowXY(event);
+                hardwareSelector.setArea(x, y, x, y);
+                hardwareSelector.releasePixBuffers();
+
+                if (hardwareSelector.captureBuffers()) {
+                    processSelections(hardwareSelector.generateSelection(x, y, x, y));
+                } else {
+                    processSelections(null);
+                }
+            }
+            function throttle(callback, delay) {
+                let isThrottled = false;
+                let argsToUse = null;
+                function next() {
+                    isThrottled = false;
+                    if (argsToUse !== null) {
+                        wrapper(...argsToUse); // eslint-disable-line
+                        argsToUse = null;
+                    }
+                }
+                function wrapper(...args) {
+                    if (isThrottled) {
+                        argsToUse = args;
+                        return;
+                    }
+                    isThrottled = true;
+                    callback(...args);
+                    setTimeout(next, delay);
+                }
+                return wrapper;
+            }
+            const throttleMouseHandler = throttle(pickOnMouseEvent, 100);
+            container.addEventListener('mousemove', throttleMouseHandler);
         }
     } else {
         if (model.renderer) {
@@ -552,7 +643,6 @@ export const showVector = (vector, model, points, vectorData, lut1, min, max, Ar
 //读取json
 export const readJson = (filePath, _this, fileName, type) => {
     let xhr = new XMLHttpRequest()
-    console.log(filePath)
     xhr.open('GET', '/data' + filePath, true);
     xhr.responseType = 'json';
     xhr.send();

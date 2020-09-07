@@ -230,6 +230,7 @@ export default class mshView extends Component {
             model.renderer.removeActor(model.actor);
             model.actor = actor1
             model.renderer.addActor(actor1);
+            
         };
 
         displayBox = display;

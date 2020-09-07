@@ -79,7 +79,6 @@ export default class Vtk extends React.Component {
         } else if (this.props.match.params.id) {
             let id = { "fileName": this.props.match.params.id };
             axios.post(goUrl + '/process/proUpTwo', id).then(function (response) {
-                console.log(response);
                 if (response.data.data) {
                     _this.setState({
                         fileName: id["fileName"],

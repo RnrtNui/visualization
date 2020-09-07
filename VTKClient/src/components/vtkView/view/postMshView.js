@@ -9,12 +9,16 @@ import Draggable from 'react-draggable';
 import React, { Component } from 'react';
 import vtkActor from 'vtk.js/Sources/Rendering/Core/Actor';
 import vtkMapper from 'vtk.js/Sources/Rendering/Core/Mapper';
+import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder';
+import vtkSphereSource from 'vtk.js/Sources/Filters/Sources/SphereSource';
+import vtkAppendPolyData from 'vtk.js/Sources/Filters/General/AppendPolyData';
 import { Slider, InputNumber, Input, Col, Row, Select, Checkbox } from "antd";
 import { FieldAssociations } from 'vtk.js/Sources/Common/DataModel/DataSet/Constants';
 import vtkOpenGLHardwareSelector from 'vtk.js/Sources/Rendering/OpenGL/HardwareSelector';
 import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps';
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
 import colorMode from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps.json';
+
 import { Rendering, Screen, gl, scalarBar, Axis, reassignManipulators, changeManipulators, showBounds, showVector } from "../common/index";
 
 const InputGroup = Input.Group;
@@ -55,7 +59,11 @@ export default class mshView extends Component {
             resId: 0,
             vector: false,
             vectorData: [],
-            OpenGlRW: {}
+            OpenGlRW: {},
+            inputX: 0,
+            inputY: 0,
+            inputZ: 0,
+            arrs: {}
         }
         this.container = React.createRef();
         this.container1 = React.createRef();
@@ -78,13 +86,15 @@ export default class mshView extends Component {
             points = JSON.parse(JSON.stringify(data.data.StrCoord));
             let StrElem = JSON.parse(JSON.stringify(data.data.StrElem));
             let Material = [], checkedList = [];
-            let cells = [], actors = {};
+            let cells = [], actors = {}, arrs = {};
+            let n = 0;
             for (var key in StrElem) {　　//遍历对象的所有属性，包括原型链上的所有属性
+                n += 1;
                 if (StrElem.hasOwnProperty(key)) { //判断是否是对象自身的属性，而不包含继承自原型链上的属性
                     Material.push("材料" + key);        //键名
                     checkedList.push(key)
                     cells = cells.concat(StrElem[key]);
-                    let polydata = vtk({
+                    polydata = {
                         vtkClass: 'vtkPolyData',
                         points: {
                             vtkClass: 'vtkPoints',
@@ -96,13 +106,9 @@ export default class mshView extends Component {
                             vtkClass: 'vtkCellArray',
                             values: StrElem[key],
                         },
-
-                    })
-                    const mapper = vtkMapper.newInstance();
-                    mapper.setInputData(polydata);
-                    const actor = vtkActor.newInstance();
-                    actor.setMapper(mapper);
-                    actors["材料" + key] = actor;
+                    }
+                    actors["材料" + key] = polydata;
+                    arrs["材料" + key] = n;
                 }
             }
             let ResData = {}, resultList = [], checkedResList = [], vectorData = [];
@@ -160,7 +166,8 @@ export default class mshView extends Component {
                 max: max,
                 unique: unique,
                 actors: actors,
-                OpenGlRW: OpenGlRW
+                OpenGlRW: OpenGlRW,
+                arrs: arrs
             })
             polydata = vtk({
                 vtkClass: 'vtkPolyData',
@@ -360,10 +367,16 @@ export default class mshView extends Component {
             max: Number(e.target.value)
         });
     };
+    //改变材料位移
+    onChangeTransform = (val) => {
+        this.setState({
+            inputZ: val
+        })
+    }
 
     render() {
         let {
-            boxBgColor, Material, displayBox, vector, ArrowSize, vectorData, ResData, min, max, cancle, model, activeScalar, mode, unique, points, cells, pointData, checkedResList, actors, OpenGlRW
+            boxBgColor, Material, displayBox, vector, ArrowSize, vectorData, ResData, min, max, cancle, model, activeScalar, mode, unique, points, cells, pointData, checkedResList, actors, OpenGlRW, inputX, inputY, inputZ, arrs
         } = this.state;
         let {
             display, displayBar, keydown, useAxis, opt, Scalar, useScreen, useLight, bounds, show
@@ -424,7 +437,7 @@ export default class mshView extends Component {
                 values: cells,
             },
         };
-        if(OpenGlRW.initialize) gl(OpenGlRW);
+        if (OpenGlRW.initialize) gl(OpenGlRW);
 
         //是否显示结果
         if (Scalar === true) {
@@ -457,6 +470,8 @@ export default class mshView extends Component {
                 model.renderer.removeActor(model.actor);
                 model.actor = actor1;
                 model.renderer.addActor(actor1);
+                console.log(model.renderer.getVTKWindow().getViews()[0].get3DContext());
+
             };
         } else if (Scalar === false) {
             displayBar = 0;
@@ -464,13 +479,25 @@ export default class mshView extends Component {
                 if (document.querySelector(".vtk-container1")) {
                     document.querySelector(".vtk-container1").style.display = 'none';
                 }
-                model.renderer.removeActor(model.actor)
+                let all = model.renderer.getActors();
+                for (let i = 0; i < all.length; i++) {
+                    model.renderer.removeActor(all[i]);
+                }
                 for (let key in actors) {
                     if (actors.hasOwnProperty(key)) {
                         if (cancle.indexOf(key) === -1) {
-                            model.renderer.addActor(actors[key])
-                        } else {
-                            model.renderer.removeActor(actors[key])
+                            let act = vtk(JSON.parse(JSON.stringify(actors[key])));
+                            vtkMatrixBuilder
+                                .buildFromDegree()
+                                .translate(inputX, inputY, inputZ * arrs[key] * 10)
+                                .apply(act.getPoints().getData());
+                            const source = vtkAppendPolyData.newInstance();
+                            source.setInputData(act);
+                            const mapper = vtkMapper.newInstance();
+                            mapper.setInputConnection(source.getOutputPort());
+                            const actor = vtkActor.newInstance();
+                            actor.setMapper(mapper);
+                            model.renderer.addActor(actor)
                         }
                     }
                 }
@@ -487,15 +514,31 @@ export default class mshView extends Component {
                 );
                 hardwareSelector.attach(openGLRenderWindow, model.renderer);
                 // ----------------------------------------------------------------------------
+                // Create Picking pointer
+                // ----------------------------------------------------------------------------
+                const pointerSource = vtkSphereSource.newInstance({
+                    phiResolution: 15,
+                    thetaResolution: 15,
+                    radius: 0.0001,
+                });
+                const pointerMapper = vtkMapper.newInstance();
+                const pointerActor = vtkActor.newInstance();
+                pointerActor.setMapper(pointerMapper);
+                pointerMapper.setInputConnection(pointerSource.getOutputPort());
+                model.renderer.addActor(pointerActor);
+                let container = document.querySelectorAll(".vtk-container")[0];
+                // ----------------------------------------------------------------------------
                 // Create Mouse listener for picking on mouse move
                 // ----------------------------------------------------------------------------
                 function eventToWindowXY(event) {
                     // We know we are full screen => window.innerXXX
                     // Otherwise we can use pixel device ratio or else...
                     const { clientX, clientY } = event;
+                    let rec = container.getBoundingClientRect();
                     const [width, height] = openGLRenderWindow.getSize();
-                    const x = Math.round((width * clientX) / window.innerWidth);
-                    const y = Math.round(height * (1 - clientY / window.innerHeight)); // Need to flip Y
+                    const x = Math.round((width * clientX) / container.clientWidth - rec.left);
+                    const y = Math.round(height * (1 - clientY / container.clientHeight) + rec.top);
+                    // Need to flip Y
                     return [x, y];
                 }
                 // ----------------------------------------------------------------------------
@@ -504,6 +547,12 @@ export default class mshView extends Component {
                 let needGlyphCleanup = false;
                 let lastProcessedActor = null;
                 const updateWorldPosition = (worldPosition) => {
+                    if (lastProcessedActor) {
+                        pointerActor.setVisibility(true);
+                        pointerActor.setPosition(worldPosition);
+                    } else {
+                        pointerActor.setVisibility(false);
+                    }
                     model.renderWindow.render();
                 };
                 function processSelections(selections) {
@@ -513,25 +562,20 @@ export default class mshView extends Component {
                         lastProcessedActor = null;
                         return;
                     }
-
                     const { worldPosition, prop } = selections[0].getProperties();
-
                     if (lastProcessedActor === prop) {
                         // Skip render call when nothing change
                         updateWorldPosition(worldPosition);
                         return;
                     }
                     lastProcessedActor = prop;
-
                     // Make the picked actor green
                     model.renderer.getActors().forEach((a) => a.getProperty().setColor(...WHITE));
                     prop.getProperty().setColor(...GREEN);
-
                     // We hit the glyph, let's scale the picked glyph
                     if (needGlyphCleanup) {
                         needGlyphCleanup = false;
                     }
-
                     // Update picture for the user so we can see the green one
                     updateWorldPosition(worldPosition);
                 }
@@ -573,7 +617,7 @@ export default class mshView extends Component {
                     return wrapper;
                 }
                 const throttleMouseHandler = throttle(pickOnMouseEvent, 100);
-                document.addEventListener('mousemove', throttleMouseHandler);
+                container.addEventListener('mousemove', throttleMouseHandler);
             }
         }
         displayBox = display;
@@ -628,7 +672,7 @@ export default class mshView extends Component {
                                     </Col>
                                 </Row>
                                 <hr />
-                                <Row style={{}}>
+                                <Row >
                                     <Col >Transparency</Col >
                                     <Col>
                                         <Slider
@@ -650,6 +694,8 @@ export default class mshView extends Component {
                                             mode="multiple"
                                             style={{ width: 200, marginBottom: "10px" }}
                                             placeholder="Show Material"
+                                            maxTagCount={1}
+                                            showArrow={true}
                                             defaultValue={Material}
                                             onChange={this.onChangeRes}
                                             onDeselect={this.onCheckDesChange}
@@ -664,6 +710,17 @@ export default class mshView extends Component {
                                                 })
                                             }
                                         </Select>) : (null)
+                                    }
+                                    {
+                                        Scalar === false ? (<Slider
+                                            min={0}
+                                            max={10}
+                                            step={0.1}
+                                            // tooltipVisible={true}
+                                            style={{ width: 180, marginBottom: "10px" }}
+                                            onChange={this.onChangeTransform}
+                                            defaultValue={0}
+                                        />) : (null)
                                     }
                                 </Row>
                                 <hr />

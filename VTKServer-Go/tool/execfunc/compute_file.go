@@ -12,7 +12,7 @@ func ComputeTypeFile(execFile string, filePath string, fileNameM string) string 
 
 	//文件路径
 	fileNameMsh := filepath.Join(filePath, fileNameM)
-	if IsExists(fileNameMsh) {
+	if !IsExists(fileNameMsh) {
 		return "文件不存在,请上传数据文件"
 	}
 	beego.Debug("filenameMsh:", fileNameMsh)
