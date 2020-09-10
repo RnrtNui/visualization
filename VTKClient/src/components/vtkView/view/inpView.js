@@ -344,7 +344,12 @@ export default class inpView extends Component {
             model.mapper = mapper1;
             model.renderer.addActor(actor1);
         }
-        if (Scalar === false) displayBar = 0;
+        if (Scalar === false) {
+            displayBar = 0;
+            if(model.renderWindow) model.mapper.setScalarModeToUsePointData();
+        }else{
+            if(model.renderWindow) model.mapper.setScalarModeToUseCellData();
+        }
         displayBox = display;
 
         //改变显示样式        

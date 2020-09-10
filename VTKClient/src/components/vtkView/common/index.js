@@ -375,13 +375,9 @@ export const changeManipulators = (model, opt, keydown, useLight, useAxis, scala
         } else {
             scalarBar(model, scalar, mode, container1);
         }
-        model.actor.getMapper().setLookupTable(lut);
-        model.actor.getMapper().setInputData(vtk(polydata1));
-        model.actor.getMapper().setScalarRange(min, max);
-        model.actor.getProperty().setOpacity(inputValue);
+
     } else if (Scalar === false) {
-        model.actor.getMapper().setInputData(vtk(polydata2));
-        model.actor.getProperty().setOpacity(inputValue);
+        
     }
 
     //灯光

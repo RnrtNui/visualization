@@ -24,7 +24,7 @@ import { Rendering, Screen, gl, scalarBar, Axis, reassignManipulators, changeMan
 const InputGroup = Input.Group;
 const { Option } = Select;
 
-export default class mshView extends Component {
+export default class PostMshView extends Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -81,36 +81,15 @@ export default class mshView extends Component {
             //创建渲染场景
             Rendering(model, this.container);
             let OpenGlRW = model.fullScreenRenderer.getOpenGLRenderWindow();
-            let polydata = {};
+            let polydata = {}, polydatas = {};
             let points = [];
             points = JSON.parse(JSON.stringify(data.data.StrCoord));
             let StrElem = JSON.parse(JSON.stringify(data.data.StrElem));
             let Material = [], checkedList = [];
-            let cells = [], actors = {}, arrs = {};
+            let cells = [], actors = {}, sources = {}, arrs = [];
             let n = 0;
-            for (var key in StrElem) {　　//遍历对象的所有属性，包括原型链上的所有属性
-                n += 1;
-                if (StrElem.hasOwnProperty(key)) { //判断是否是对象自身的属性，而不包含继承自原型链上的属性
-                    Material.push("材料" + key);        //键名
-                    checkedList.push(key)
-                    cells = cells.concat(StrElem[key]);
-                    polydata = {
-                        vtkClass: 'vtkPolyData',
-                        points: {
-                            vtkClass: 'vtkPoints',
-                            dataType: 'Float32Array',
-                            numberOfComponents: 3,
-                            values: points,
-                        },
-                        polys: {
-                            vtkClass: 'vtkCellArray',
-                            values: StrElem[key],
-                        },
-                    }
-                    actors["材料" + key] = polydata;
-                    arrs["材料" + key] = n;
-                }
-            }
+            let cen = null;
+
             let ResData = {}, resultList = [], checkedResList = [], vectorData = [];
             if (data.data.ResData) {
                 for (var key1 in data.data.ResData) {　　//遍历对象的所有属性，包括原型链上的所有属性
@@ -152,6 +131,101 @@ export default class mshView extends Component {
             });
             let min = Number(unique[0]);
             let max = Number(unique[unique.length - 1]);
+
+            if (Object.keys(StrElem).length % 2 !== 0) {
+                cen = Math.ceil(Object.keys(StrElem).length / 2);
+                for (var key in StrElem) {　　//遍历对象的所有属性，包括原型链上的所有属性
+                    n += 1;
+                    if (StrElem.hasOwnProperty(key)) { //判断是否是对象自身的属性，而不包含继承自原型链上的属性
+                        Material.push("材料" + key);        //键名
+                        checkedList.push(key)
+                        cells = cells.concat(StrElem[key]);
+                        polydata = vtk({
+                            vtkClass: 'vtkPolyData',
+                            "points": {
+                                vtkClass: 'vtkPoints',
+                                dataType: 'Float32Array',
+                                numberOfComponents: 3,
+                                values: points,
+                            },
+                            "polys": {
+                                vtkClass: 'vtkCellArray',
+                                values: StrElem[key],
+                            },
+                            "pointData": {
+                                vtkClass: 'vtkDataSetAttributes',
+                                activeScalars: 0,
+                                activeVectors: 1,
+                                arrays: [{
+                                    data: {
+                                        vtkClass: 'vtkDataArray',
+                                        name: 'pointScalars',
+                                        dataType: 'Float32Array',
+                                        values: ResData[checkedResList[0]],
+                                    },
+                                }],
+                            }
+                        });
+                        const source = vtkAppendPolyData.newInstance();
+                        source.setInputData(polydata);
+                        actors["材料" + key] = polydata;
+                        arrs.push(n - cen);
+                        sources["材料" + key] = source;
+                    }
+                }
+            } else {
+                cen = Object.keys(StrElem).length / 2;
+                for (var key in StrElem) {　　//遍历对象的所有属性，包括原型链上的所有属性
+                    if (StrElem.hasOwnProperty(key)) { //判断是否是对象自身的属性，而不包含继承自原型链上的属性
+                        Material.push("材料" + key);        //键名
+                        checkedList.push(key)
+                        cells = cells.concat(StrElem[key]);
+                        polydata = vtk({
+                            vtkClass: 'vtkPolyData',
+                            "points": {
+                                vtkClass: 'vtkPoints',
+                                dataType: 'Float32Array',
+                                numberOfComponents: 3,
+                                values: points,
+                            },
+                            "polys": {
+                                vtkClass: 'vtkCellArray',
+                                values: StrElem[key],
+                            },
+                            "pointData": {
+                                vtkClass: 'vtkDataSetAttributes',
+                                activeScalars: 0,
+                                activeVectors: 1,
+                                arrays: [{
+                                    data: {
+                                        vtkClass: 'vtkDataArray',
+                                        name: 'pointScalars',
+                                        dataType: 'Float32Array',
+                                        values: ResData[checkedResList[0]],
+                                    },
+                                }],
+                            }
+                        });
+                        const source = vtkAppendPolyData.newInstance();
+                        source.setInputData(polydata);
+                        actors["材料" + key] = polydata;
+                        arrs.push(n < cen ? n - cen : n - cen + 1);
+                        sources["材料" + key] = source;
+                    }
+                    n += 1;
+                }
+            }
+            model.actors = actors;
+            model.sources = sources;
+            for (let key in actors) {
+                if (actors.hasOwnProperty(key)) {
+                    const mapper = vtkMapper.newInstance();
+                    mapper.setInputConnection(model.sources[key].getOutputPort());
+                    const actor = vtkActor.newInstance();
+                    actor.setMapper(mapper);
+                    model.renderer.addActor(actor)
+                }
+            }
             this.setState({
                 points: points,
                 cells: cells,
@@ -169,6 +243,7 @@ export default class mshView extends Component {
                 OpenGlRW: OpenGlRW,
                 arrs: arrs
             })
+            model.actor = model.renderer.getActors();
             polydata = vtk({
                 vtkClass: 'vtkPolyData',
                 points: {
@@ -181,21 +256,16 @@ export default class mshView extends Component {
                     vtkClass: 'vtkCellArray',
                     values: cells,
                 },
-
             });
             const mapper = vtkMapper.newInstance({
                 interpolateScalarsBeforeMapping: true
             });
             mapper.setInputData(polydata);
-            const actor = vtkActor.newInstance();
-            model.actor = actor;
-            actor.setMapper(mapper);
-            model.renderer.addActor(actor);
-            // Populate with initial manipulators
             model.interactorStyle.setCenterOfRotation(mapper.getCenter())
             reassignManipulators(model);
         }
         model.renderer.resetCamera();
+        model.renderWindow.render();
     };
 
     componentDidMount() {
@@ -442,22 +512,15 @@ export default class mshView extends Component {
         //是否显示结果
         if (Scalar === true) {
             if (model.renderer) {
-                for (let key in actors) {
-                    if (actors.hasOwnProperty(key)) {
-                        model.renderer.removeActor(actors[key]);
-                    }
-                };
-                if (document.querySelector('.textCanvas')) this.container.current.children[0].removeChild(document.querySelector('.textCanvas'))
-                model.renderer.removeActor(model.bounds);
-                showBounds(bounds, model, this.container, vtk(polydata1)); //边框
                 showVector(vector, model, points, vectorData, lut1, min, max, ArrowSize); //矢量
-                const mapper1 = vtkMapper.newInstance({
-                    interpolateScalarsBeforeMapping: true
+                let all = model.renderer.getActors();
+                all.forEach((anActor) => {
+                    const mapper = anActor.getMapper();
+                    mapper.setScalarModeToUsePointData();
+                    anActor.getMapper().setLookupTable(lut1);
+                    anActor.getMapper().setScalarRange(min, max);
+                    anActor.getProperty().setOpacity(inputValue);
                 });
-                const actor1 = vtkActor.newInstance();
-                mapper1.setLookupTable(lut1);
-                mapper1.setInputData(vtk(polydata1));
-                mapper1.setScalarRange(min, max);
                 let scalarBox = document.getElementsByClassName('vtk-container1')[0];
                 if (scalarBox) {
                     scalarBox.innerHTML = null;
@@ -466,12 +529,6 @@ export default class mshView extends Component {
                     this.container1.current.innerHTML = null;
                 }
                 scalarBar(model, unique, modes, this.container1);
-                actor1.setMapper(mapper1);
-                model.renderer.removeActor(model.actor);
-                model.actor = actor1;
-                model.renderer.addActor(actor1);
-                console.log(model.renderer.getVTKWindow().getViews()[0].get3DContext());
-
             };
         } else if (Scalar === false) {
             displayBar = 0;
@@ -480,31 +537,13 @@ export default class mshView extends Component {
                     document.querySelector(".vtk-container1").style.display = 'none';
                 }
                 let all = model.renderer.getActors();
-                for (let i = 0; i < all.length; i++) {
-                    model.renderer.removeActor(all[i]);
-                }
-                for (let key in actors) {
-                    if (actors.hasOwnProperty(key)) {
-                        if (cancle.indexOf(key) === -1) {
-                            let act = vtk(JSON.parse(JSON.stringify(actors[key])));
-                            vtkMatrixBuilder
-                                .buildFromDegree()
-                                .translate(inputX, inputY, inputZ * arrs[key] * 10)
-                                .apply(act.getPoints().getData());
-                            const source = vtkAppendPolyData.newInstance();
-                            source.setInputData(act);
-                            const mapper = vtkMapper.newInstance();
-                            mapper.setInputConnection(source.getOutputPort());
-                            const actor = vtkActor.newInstance();
-                            actor.setMapper(mapper);
-                            model.renderer.addActor(actor)
-                        }
-                    }
-                }
-                if (document.querySelector('.textCanvas')) this.container.current.children[0].removeChild(document.querySelector('.textCanvas'))
-                model.renderer.removeActor(model.bounds);
-                showBounds(bounds, model, this.container, vtk(polydata2)); //边框
-
+                all.forEach((anActor) => {
+                    const mapper = anActor.getMapper();
+                    mapper.setScalarModeToUseCellData();
+                    anActor.getProperty().setColor(1, 1, 1);
+                    anActor.getProperty().setOpacity(inputValue);
+                    model.renderWindow.render();
+                });
                 const openGLRenderWindow = model.interactor.getView();
                 const hardwareSelector = vtkOpenGLHardwareSelector.newInstance({
                     captureZValues: true,
@@ -620,6 +659,23 @@ export default class mshView extends Component {
                 container.addEventListener('mousemove', throttleMouseHandler);
             }
         }
+        if (model.renderer) {
+            if (document.querySelector('.textCanvas')) this.container.current.children[0].removeChild(document.querySelector('.textCanvas'))
+            model.renderer.removeActor(model.bounds);
+            showBounds(bounds, model, this.container, model.renderer.getActors()[0].getMapper().getInputData()); //边框
+            let all = model.actor;
+            all.forEach((anActor, index) => {
+                let factor = Math.abs(anActor.getBounds()[2]) + Math.abs(anActor.getBounds()[3]);
+                let actData = vtk(JSON.parse(JSON.stringify(actors["材料" + (index + 1)].getState())));
+                vtkMatrixBuilder
+                    .buildFromDegree()
+                    .translate(inputX, inputY, inputZ * arrs[index] * factor / 20)
+                    .apply(actData.getPoints().getData());
+                model.sources["材料" + (index + 1)].setInputData(actData);
+                model.renderWindow.render();
+            });
+        }
+
         displayBox = display;
 
         //改变显示样式
@@ -711,17 +767,15 @@ export default class mshView extends Component {
                                             }
                                         </Select>) : (null)
                                     }
-                                    {
-                                        Scalar === false ? (<Slider
-                                            min={0}
-                                            max={10}
-                                            step={0.1}
-                                            // tooltipVisible={true}
-                                            style={{ width: 180, marginBottom: "10px" }}
-                                            onChange={this.onChangeTransform}
-                                            defaultValue={0}
-                                        />) : (null)
-                                    }
+                                    <Slider
+                                        min={0}
+                                        max={10}
+                                        step={0.1}
+                                        // tooltipVisible={true}
+                                        style={{ width: 180, marginBottom: "10px" }}
+                                        onChange={this.onChangeTransform}
+                                        defaultValue={0}
+                                    />
                                 </Row>
                                 <hr />
                                 <Row><span>Result</span></Row>

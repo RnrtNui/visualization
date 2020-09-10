@@ -373,10 +373,16 @@ export default class flaviaView extends Component {
             mapper1.setScalarRange(min, max);
             mapper1.setInputData(vtk(polydata1));
             model.renderer.removeActor(model.actor);
-            model.actor = actor1
+            model.mapper = mapper1;
+            model.actor = actor1;
             model.renderer.addActor(actor1);
         }
-        if (Scalar === false) displayBar = 0;
+        if (Scalar === false) {
+            displayBar = 0;
+            if(model.renderWindow) model.mapper.setScalarModeToUseCellData();
+        }else{
+            if(model.renderWindow) model.mapper.setScalarModeToUsePointData();
+        }
         displayBox = display;
         //改变显示样式
         if (model.renderer) changeManipulators(model, opt, keydown, useLight, useAxis, unique, modes, this.container1, lut1, inputValue, polydata1, polydata2, min, max, Scalar);
