@@ -5,6 +5,7 @@
 * 文件描述：*.off类型数据文件渲染逻辑。
 */
 import vtk from 'vtk.js/Sources/vtk';
+import Axios from 'axios';
 import Draggable from 'react-draggable';
 import React, { Component } from 'react';
 import { Slider, Input, Col, Row } from "antd";
@@ -97,6 +98,11 @@ export default class offView extends Component {
     componentDidMount() {
         this.result();
         Axis(this.state.model);
+        Axios.post("http://192.168.2.134:8003/transformation", { "fileName": "model.stl" }).then(req => {
+            console.log(req.data);
+            let href = "http://192.168.2.134:4000/visualization/"+req.data;
+            window.location.href = href;
+        })
     };
     InputMapperRangeX = (e) => {
         this.setState({
@@ -119,7 +125,7 @@ export default class offView extends Component {
         } = this.state;
         if (OpenGlRW.initialize) gl(OpenGlRW);
         if (model.renderer) {
-            if(model.actor) model.renderer.removeActor(model.actor);
+            if (model.actor) model.renderer.removeActor(model.actor);
             let point1 = [
                 13.2321585512394, 24.4431845869678, 5.27382404843011,
                 13.479771209699, 24.8714622036826, 5.2566345296015,
@@ -164,7 +170,7 @@ export default class offView extends Component {
             });
             mapper.setInputConnection(source.getOutputPort());
             const actor = vtkActor.newInstance();
-            model.actor=actor;
+            model.actor = actor;
             actor.setMapper(mapper);
             model.renderer.addActor(actor);
             model.renderWindow.render();

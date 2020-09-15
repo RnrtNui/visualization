@@ -130,10 +130,9 @@ export default class offView extends Component {
                 polys: {
                     vtkClass: 'vtkCellArray',
                     dataType: "Float32Array",
-                    values: data.data.CELLS.slice(2760,5520),
+                    values: data.data.CELLS,
                 },
             });
-            console.log(polydata2.getState())
             const mapper2 = vtkMapper.newInstance({
                 interpolateScalarsBeforeMapping: true
             });
@@ -147,6 +146,7 @@ export default class offView extends Component {
             model.renderer.addActor(actor2);
             showBounds(bounds, model, this.container, polydata2); //边框
             changeManipulators(model, opt, keydown, useLight, useAxis);
+            model.renderWindow.render();
         }
         displayBox = display;
         //截屏

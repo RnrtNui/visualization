@@ -39,6 +39,7 @@ export default class vtkView extends Component {
             mode: "rainbow",
             unique: [],
             inputValue: 1,
+            cellData: [],
             cellDataName: [],
             vector: false,
             ArrowSize: 1,
@@ -54,6 +55,7 @@ export default class vtkView extends Component {
         let { data } = this.props;
         let { model } = this.state;
         let vtkBox = document.getElementsByClassName('vtk-container')[0];
+        console.log(data)
         if (vtkBox) {
             vtkBox.innerHTML = null;
         }
@@ -63,7 +65,7 @@ export default class vtkView extends Component {
             let OpenGlRW = model.fullScreenRenderer.getOpenGLRenderWindow();
             let points = JSON.parse(JSON.stringify(data.data.POINTS));
             let cells = JSON.parse(JSON.stringify(data.data.CELLS));
-            let cellData = JSON.parse(JSON.stringify(data.data.CELLDATA));
+            let cellData = Object.keys(data.data.CELLDATA).length !== 0 ? JSON.parse(JSON.stringify(data.data.CELLDATA)) : {};
             let vectors = []
             if (Object.getOwnPropertyNames(data.data.VECTORS).length > 0) {
                 vectors = JSON.parse(JSON.stringify(data.data.VECTORS));
@@ -98,14 +100,17 @@ export default class vtkView extends Component {
                 }
                 vectorData = vectors[vectordataName[0]];
             }
-            let pointData = JSON.parse(JSON.stringify(cellData[cellDataName[0]]));
-            let unique = [...new Set(pointData)];
-            if (unique[0] === "null") unique.splice(0, 1);
-            unique.sort(function (a, b) {
-                return a - b;
-            });
-            let min = Number(unique[0]);
-            let max = Number(unique[unique.length - 1]);
+            let pointData = "", unique = [], min = 0, max = 1;
+            if (Object.keys(data.data.CELLDATA).length !== 0) {
+                pointData = JSON.parse(JSON.stringify(cellData[cellDataName[0]]));
+                unique = [...new Set(pointData)];
+                if (unique[0] === "null") unique.splice(0, 1);
+                unique.sort(function (a, b) {
+                    return a - b;
+                });
+                min = Number(unique[0]);
+                max = Number(unique[unique.length - 1]);
+            }
             this.setState({
                 points: points,
                 cells: cells,
@@ -284,7 +289,7 @@ export default class vtkView extends Component {
                 values: cells,
             },
         };
-
+        if (Object.keys(data.data.CELLDATA).length === 0) Scalar = false;
         //是否显示结果
         if (document.querySelector('.textCanvas')) this.container.current.children[0].removeChild(document.querySelector('.textCanvas'))
         let modes = mode;
@@ -306,32 +311,49 @@ export default class vtkView extends Component {
         if (model.fullScreenRenderer) {
             model.renderer.removeActor(model.bounds);
             if (data.data.CELLDATA === null || Object.keys(data.data.CELLDATA).length === 0) {
-                polydata1 = {
-                    vtkClass: 'vtkPolyData',
-                    points: {
-                        vtkClass: 'vtkPoints',
-                        dataType: 'Float32Array',
-                        numberOfComponents: 3,
-                        values: points,
-                    },
-                    polys: {
-                        vtkClass: 'vtkCellArray',
-                        dataType: "Float32Array",
-                        values: cells,
-                    },
-                    pointData: {
-                        vtkClass: 'vtkDataSetAttributes',
-                        activeScalars: 0,
-                        arrays: [{
-                            data: {
-                                vtkClass: 'vtkDataArray',
-                                name: 'pointScalars',
-                                dataType: 'Float32Array',
-                                values: cellData[cellDataName[0]],
-                            },
-                        }],
-                    }
-                };
+                if (Object.keys(cellData).length > 0) {
+                    polydata1 = {
+                        vtkClass: 'vtkPolyData',
+                        points: {
+                            vtkClass: 'vtkPoints',
+                            dataType: 'Float32Array',
+                            numberOfComponents: 3,
+                            values: points,
+                        },
+                        polys: {
+                            vtkClass: 'vtkCellArray',
+                            dataType: "Float32Array",
+                            values: cells,
+                        },
+                        pointData: {
+                            vtkClass: 'vtkDataSetAttributes',
+                            activeScalars: 0,
+                            arrays: [{
+                                data: {
+                                    vtkClass: 'vtkDataArray',
+                                    name: 'pointScalars',
+                                    dataType: 'Float32Array',
+                                    values: cellData[cellDataName[0]],
+                                },
+                            }],
+                        }
+                    };
+                } else {
+                    polydata1 = {
+                        vtkClass: 'vtkPolyData',
+                        points: {
+                            vtkClass: 'vtkPoints',
+                            dataType: 'Float32Array',
+                            numberOfComponents: 3,
+                            values: points,
+                        },
+                        polys: {
+                            vtkClass: 'vtkCellArray',
+                            dataType: "Float32Array",
+                            values: cells,
+                        }
+                    };
+                }
             } else {
                 polydata1 = {
                     vtkClass: 'vtkPolyData',
@@ -373,11 +395,13 @@ export default class vtkView extends Component {
             mapper1.setInputData(vtk(polydata1));
             mapper1.setScalarRange(min, max);
             //更新色标卡
-            if (this.container1.current.childElementCount < 1) {
-                scalarBar(model, unique, modes, this.container1);
-            } else {
-                this.container1.current.innerHTML = null;
-                scalarBar(model, unique, modes, this.container1);
+            if (Object.keys(cellData).length > 0) {
+                if (this.container1.current.childElementCount < 1) {
+                    scalarBar(model, unique, modes, this.container1);
+                } else {
+                    this.container1.current.innerHTML = null;
+                    scalarBar(model, unique, modes, this.container1);
+                }
             }
             model.lookupTable = lut1;
             actor1.getProperty().setOpacity(inputValue);
@@ -389,14 +413,15 @@ export default class vtkView extends Component {
         }
         if (Scalar === false) {
             displayBar = 0;
-            if(model.renderWindow) model.mapper.setScalarModeToUsePointData();
-        }else{
-            if(model.renderWindow) model.mapper.setScalarModeToUseCellData();
+            if (model.renderWindow) model.mapper.setScalarModeToUsePointData();
+        } else {
+            if (model.renderWindow) model.mapper.setScalarModeToUseCellData();
         }
+
         displayBox = display;
 
         //改变显示样式
-        if (model.renderer) changeManipulators(model, opt, keydown, useLight, useAxis, unique, modes, this.container1, lut1, inputValue, polydata1, polydata2, min, max, Scalar);
+        if (model.renderer||Object.keys(cellData).length > 0) changeManipulators(model, opt, keydown, useLight, useAxis, unique, modes, this.container1, lut1, inputValue, polydata1, polydata2, min, max, Scalar);
 
         //截屏
         if (useScreen !== null) {

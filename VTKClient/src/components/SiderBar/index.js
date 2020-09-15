@@ -150,7 +150,7 @@ export default class Sider extends React.Component {
               { title: 'les1.post.msh', key: '0-0-5-5', icon: <CarryOutOutlined /> },
               { title: 'les2.post.msh', key: '0-0-5-6', icon: <CarryOutOutlined /> },
               { title: 'dylkw.post.msh', key: '0-0-5-7', icon: <CarryOutOutlined /> },
-              { title: 'greenland5km3d.post.msh', key: '0-0-5-8', icon: <CarryOutOutlined /> },
+              { title: 'greenland5km3d.flavia.msh', key: '0-0-5-8', icon: <CarryOutOutlined /> },
             ],
           },
           {

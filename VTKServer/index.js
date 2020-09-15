@@ -2,7 +2,7 @@ const express = require('express');
 const fs = require("fs");
 var path = require('path');
 var app = express();
-
+var cmd = require('node-cmd');
 app.all('/*', function (req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
     res.header('Access-Control-Allow-Headers', 'Content-Type, Content-Length, Authorization, Accept, X-Requested-With , yourHeaderFeild');
@@ -73,7 +73,7 @@ function readVTK(arr, res, extname) {
     }
     if (newObj.POINT_DATA) {
         obj.POINT_DATA = [];
-        for (let j = 0; j < newObj.POINT_DATA.length-1; j++) {
+        for (let j = 0; j < newObj.POINT_DATA.length - 1; j++) {
             obj.POINT_DATA.push(Number(newObj.POINT_DATA[j]));
         }
     }
@@ -98,8 +98,66 @@ function readVTK(arr, res, extname) {
 }
 
 //read .Tiff file
-function readTiff() {
-
+function writeStlGeoFile(fileName) {
+    let context = `
+            Merge "${fileName}";
+            DefineConstant[
+              angle = {40, Min 20, Max 120, Step 1, Name "Parameters/Angle for surface detection"},
+              forceParametrizablePatches = {0, Choices{0,1}, Name "Parameters/Create surfaces guaranteed to be parametrizable"},includeBoundary = 1,curveAngle = 180
+            ];
+            ClassifySurfaces{angle * Pi/180, includeBoundary, forceParametrizablePatches, curveAngle * Pi / 180};
+            CreateGeometry;
+            Surface Loop(1) = Surface{:};
+            Volume(1) = {1};
+            
+            funny = DefineNumber[0, Choices{0,1},
+              Name "Parameters/Apply funny mesh size field?" ];
+            
+            Field[1] = MathEval;
+            If(funny)
+              Field[1].F = "2*Sin((x+y)/5) + 30";
+            Else
+              Field[1].F = "20";
+            EndIf
+            Background Field = 1;
+            `
+    fs.writeFile('../data/process/stl.geo', context, function (err) {
+        if (err) {
+            console.log('写入失败', err);
+        } else {
+            console.log('写入成功');
+        }
+    })
+}
+function writeStpGeoFile(fileName) {
+    let context = `
+            SetFactory("OpenCASCADE");
+            v() = ShapeFromFile("${fileName}");
+            Mesh.CharacteristicLengthMin = 3;
+            Mesh.CharacteristicLengthMax = 3;
+        `
+    fs.writeFile('../data/process/stp.geo', context, function (err) {
+        if (err) {
+            console.log('写入失败', err);
+        } else {
+            console.log('写入成功');
+        }
+    })
+}
+function writeIgsGeoFile(fileName) {
+    let context = `
+    SetFactory("OpenCASCADE");
+    v() = ShapeFromFile("${fileName}");
+    Mesh.CharacteristicLengthMin = 1;
+    Mesh.CharacteristicLengthMax = 1;
+            `
+    fs.writeFile('../data/process/igs.geo', context, function (err) {
+        if (err) {
+            console.log('写入失败', err);
+        } else {
+            console.log('写入成功');
+        }
+    })
 }
 
 app.post('/vtkReadFile', function (req, res) {
@@ -129,7 +187,7 @@ app.post('/vtkReadFile', function (req, res) {
             let ndata = data2.toString();
             res.send(ndata);
             res.end();
-        }else {
+        } else {
             // var data = fs.readFileSync("../data/project/3/dataUstr/" + fileName);
             res.send(null);
             res.end();
@@ -150,13 +208,13 @@ app.post('/vtkFoundFile', function (req, res) {
             let file = files[i];
             let pathName = path.join(dir, file);
             let obj = proDir[file] = {};
-            (function(){
+            (function () {
                 fs.readdir(pathName, function (err, files1) {
                     for (let j = 0; j < files1.length; j++) {
                         let file1 = files1[j];
                         console.log(1)
                         let pathName1 = path.join(pathName, file1);
-                        let arr = obj[file1]=[];
+                        let arr = obj[file1] = [];
                         fs.readdir(pathName1, function (err, files2) {
                             arr = files2;
                         })
@@ -164,11 +222,74 @@ app.post('/vtkFoundFile', function (req, res) {
                         console.log(obj[file1])
                     }
                 })
-            } )()
-            proDir[file] =obj;
+            })()
+            proDir[file] = obj;
         }
         console.log(proDir)
 
     })
 })
-app.listen(8002);
+app.post('/transformation', function (req, res) {
+    var postData = '';
+    req.on('data', function (chunk) {
+        // chunk 默认是一个二进制数据，和 data 拼接会自动 toString
+        postData += chunk;
+    });
+    req.on('end', function () {
+        let date = new Date();
+        let time = date.getTime()
+        //对url进行解码（url会对中文进行编码）
+        postData = decodeURI(postData);
+        let fileName = JSON.parse(postData).fileName,
+            inputFormat = JSON.parse(postData).inputFormat,
+            meshType = JSON.parse(postData).meshType,
+            outputFormat = JSON.parse(postData).outputFormat;
+        let names = fileName.split('.');
+        console.log(inputFormat);
+        if (inputFormat === ".stl" || inputFormat === ".STL") {
+            writeStlGeoFile(fileName);
+            fileName = "stl.geo";
+        } else if (inputFormat === ".stp" || inputFormat === ".step") {
+            writeStpGeoFile(fileName);
+            fileName = "stp.geo";
+        } else if (inputFormat === ".igs" || inputFormat === ".iges") {
+            writeIgsGeoFile(fileName);
+            fileName = "igs.geo";
+        }
+        let gmshPath = "/home/luyangfei/Downloads/gmsh-4.6.0-Linux64/bin/gmsh";
+        let processPath = "/home/luyangfei/project/visualization/data/process/";
+        let command = gmshPath + ' ' + processPath + fileName + ' -' + meshType + ' -o ' + processPath + names[0] + "_" + time + outputFormat + ' -format ' + outputFormat.substr(1);
+        cmd.get(
+            command,
+            function (err, data, stderr) {
+                res.send("http://192.168.2.134:4000/visualization/" + names[0] + "_" + time + outputFormat);
+            }
+        );
+    })
+})
+app.post('/preview', function (req, res) {
+    var postData = '';
+    req.on('data', function (chunk) {
+        // chunk 默认是一个二进制数据，和 data 拼接会自动 toString
+        postData += chunk;
+    });
+    req.on('end', function () {
+        let date = new Date();
+        let time = date.getTime()
+        //对url进行解码（url会对中文进行编码）
+        postData = decodeURI(postData);
+        let fileName = JSON.parse(postData).fileName;
+        let names = fileName.split('.');
+        let gmshPath = "/home/luyangfei/Downloads/gmsh-4.6.0-Linux64/bin/gmsh";
+        let processPath = "/home/luyangfei/project/visualization/data/process/";
+        let command = gmshPath + ' ' + processPath + fileName + ' -o ' + processPath + names[0] + "_" + time + '.vtk' + ' -format vtk';
+        cmd.get(
+            command,
+            function (err, data, stderr) {
+                res.send("http://192.168.2.134:4000/visualization/" + names[0] + "_" + time + '.vtk');
+            }
+        );
+    })
+})
+
+app.listen(8003);
