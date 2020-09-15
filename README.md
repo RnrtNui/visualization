@@ -13,16 +13,20 @@
 ##运行指南：
 
 ###VTKClient（模型可视化）: 
+    注意：每次更新package.json需要执行npm install更新依赖包。
     1、修改VTKClient目录下的webpack.config.js中的devServer.host改为本机ip地址、代理设置proxy下的target改为后端服务地址;
     2、修改src目录下的url.js。
     3、进入VTKClient目录下打开控制台通过　npm install 安装依赖包;
-    4、通过 npm run dev  启动项目。
+    4、npm run build 构建项目；
+    5、通过 npm run dev  启动项目。
 
 ###DataVClient（数据可视化）:
+    注意：每次更新package.json需要执行npm install更新依赖包。
     1、修改DataVClient目录下的webpack.config.js中的devServer.host改为本机ip地址、代理设置proxy下的target改为后端服务地址;
     2、修改src目录下的url.js。
     3、进入DataVClient目录下打开控制台通过　npm install 安装依赖包;
-    4、通过 npm run dev  启动项目。
+    4、npm run build 构建项目；
+    5、通过 npm run dev  启动项目。
 
 ##后端配合名称：
     VTKServer-Go
