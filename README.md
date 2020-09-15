@@ -13,13 +13,13 @@
 ##运行指南：
 
 ###VTKClient（模型可视化）: 
-    1、修改VTKClient目录下的webpack.config.js中的代理设置proxy,target改为后端服务地址;
+    1、修改VTKClient目录下的webpack.config.js中的devServer.host改为本机ip地址、代理设置proxy下的target改为后端服务地址;
     2、修改src目录下的url.js。
     3、进入VTKClient目录下打开控制台通过　npm install 安装依赖包;
     4、通过 npm run dev  启动项目。
 
 ###DataVClient（数据可视化）:
-    1、修改DataVClient目录下的webpack.config.js中的代理设置proxy,target改为后端服务地址;
+    1、修改DataVClient目录下的webpack.config.js中的devServer.host改为本机ip地址、代理设置proxy下的target改为后端服务地址;
     2、修改src目录下的url.js。
     3、进入DataVClient目录下打开控制台通过　npm install 安装依赖包;
     4、通过 npm run dev  启动项目。
@@ -40,7 +40,7 @@
 ##运行指南
 
 ###基础环境
-    go1.13
+    go1.15.2
     
 ###配置文件（需要修改的文件）
 　　项目下的conf/app.conf
@@ -49,6 +49,8 @@
 ###数据位置
     在配置文件中指定data路径
     在FTP上的”鲁杨飞“目录中下载data.zip解压到指定的data路径
+    解压后（如果是linux系统）在data/commandLinux目录下将其中的几个命令赋予执行权限
+    chmod -R +x 文件名
 
 ###添加代理在终端下执行
     go env -w GOPROXY=https://goproxy.cn,direct
