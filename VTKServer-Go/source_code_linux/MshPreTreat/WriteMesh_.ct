@@ -1,0 +1,44 @@
+// write by zhanglicheng at 20191216
+#include "FROF.h"
+
+void WriteMesh(const char *FileName, Coor Coor0, Mesh Mesh0) {
+
+    char FFileName[255];
+    strcpy(FFileName, "T");
+    strcat(FFileName, FileName);
+
+    FILE *fp;
+    fp = fopen(FFileName, "wb");
+
+    fprintf(fp,"%d %d\n", Coor0.dim, Coor0.nodeN);
+    for (int i=0; i<Coor0.nodeN; i++) {
+        fprintf(fp, "%d ", i+1);
+        for (int j=0; j<Coor0.dim; j++) {
+            fprintf(fp, "%e", Coor0.Coor[i*Coor0.dim+j]);
+            if (j == Coor0.dim - 1)
+                fprintf(fp, "\n");
+            else
+                fprintf(fp, " ");
+        }
+    }
+
+    fprintf(fp, "%d\n", Mesh0.TypeN);
+    for (int type_i=0; type_i<Mesh0.TypeN; type_i++) {
+
+        fprintf(fp, "%d %d\n",Mesh0.EnodeN[type_i], Mesh0.Scale[type_i]);
+
+        for (int i=0; i<Mesh0.Scale[type_i]; i++) {
+
+            fprintf(fp, "%d ", i+1);
+
+            for (int j=0; j<Mesh0.EnodeN[type_i]; j++) {
+
+                fprintf(fp, "%d ", Mesh0.elem[type_i][i].node[j]);
+            }
+
+            fprintf(fp, "%d\n", Mesh0.elem[type_i][i].Tag);
+        }
+    }
+
+    fclose(fp);
+}

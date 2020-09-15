@@ -134,6 +134,7 @@ export default class Sider extends React.Component {
               { title: 'mesh1.flavia.msh', key: '0-0-4-1', icon: <CarryOutOutlined /> },
               { title: 'greenland.flavia.msh', key: '0-0-4-2', icon: <CarryOutOutlined /> },
               { title: 'results.flavia.msh', key: '0-0-4-3', icon: <CarryOutOutlined /> },
+              { title: 'greenland5km3d.flavia.msh', key: '0-0-4-4', icon: <CarryOutOutlined /> },
             ],
           },
           {
@@ -150,7 +151,6 @@ export default class Sider extends React.Component {
               { title: 'les1.post.msh', key: '0-0-5-5', icon: <CarryOutOutlined /> },
               { title: 'les2.post.msh', key: '0-0-5-6', icon: <CarryOutOutlined /> },
               { title: 'dylkw.post.msh', key: '0-0-5-7', icon: <CarryOutOutlined /> },
-              { title: 'greenland5km3d.flavia.msh', key: '0-0-5-8', icon: <CarryOutOutlined /> },
             ],
           },
           {
