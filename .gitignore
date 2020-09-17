@@ -22,3 +22,4 @@ target/
 node_modules/
 data/
 VTKServer-Go/VTKServer-Go
+VTKServer-Go/VTKServer-Go.exe
