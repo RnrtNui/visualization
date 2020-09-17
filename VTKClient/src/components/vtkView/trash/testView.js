@@ -98,10 +98,10 @@ export default class offView extends Component {
     componentDidMount() {
         this.result();
         Axis(this.state.model);
-        Axios.post("http://192.168.2.134:8003/transformation", { "fileName": "model.stl" }).then(req => {
+        Axios.post("http://192.168.2.134:8003/getData", { "fileName": "model.stl" }).then(req => {
             console.log(req.data);
-            let href = "http://192.168.2.134:4000/visualization/"+req.data;
-            window.location.href = href;
+            // let href = "http://192.168.2.134:4000/visualization/"+req.data;
+            // window.location.href = href;
         })
     };
     InputMapperRangeX = (e) => {

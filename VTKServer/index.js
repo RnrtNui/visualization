@@ -291,5 +291,29 @@ app.post('/preview', function (req, res) {
         );
     })
 })
+app.post('/getModel', function (req, res) {
+    var postData = '';-
+    req.on('data', function (chunk) {
+        // chunk 默认是一个二进制数据，和 data 拼接会自动 toString
+        postData += chunk;
+    });
+    req.on('end', function () {
+        let date = new Date();
+        let time = date.getTime()
+        //对url进行解码（url会对中文进行编码）
+        postData = decodeURI(postData);
+        let fileName = JSON.parse(postData).fileName;
+        let names = fileName.split('.');
+        let command = 'scp -r hzhang@12.2.5.7:/public/home/hzhang/src.tgz .';
+        cmd.get(
+            command,
+            function (err, data, stderr) {
+                console.log(err);
+                console.log(stderr);
+                
+            }
+        );
+    })
+})
 
 app.listen(8003);
