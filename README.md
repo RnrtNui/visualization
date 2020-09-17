@@ -18,7 +18,7 @@
     2、修改src目录下的url.js。
     3、进入VTKClient目录下打开控制台通过　npm install 安装依赖包;
     4、npm run build 构建项目；
-    5、通过 npm run dev  启动项目。
+    5、通过 npm start 启动项目。
 
 ###DataVClient（数据可视化）:
     注意：每次更新package.json需要执行npm install更新依赖包。
@@ -26,7 +26,7 @@
     2、修改src目录下的url.js。
     3、进入DataVClient目录下打开控制台通过　npm install 安装依赖包;
     4、npm run build 构建项目；
-    5、通过 npm run dev  启动项目。
+    5、通过 npm start 启动项目。
 
 ##后端配合名称：
     VTKServer-Go
