@@ -6,7 +6,7 @@
 */
 import vtk from 'vtk.js/Sources/vtk';
 import Axios from 'axios';
-import Draggable from 'react-draggable';
+// import Draggable from 'react-draggable';
 import React, { Component } from 'react';
 import { Slider, Input, Col, Row } from "antd";
 import vtkActor from 'vtk.js/Sources/Rendering/Core/Actor';
@@ -17,7 +17,7 @@ import { Rendering, Screen, gl, Axis, reassignManipulators, changeManipulators, 
 import vtkSphereSource from 'vtk.js/Sources/Filters/Sources/SphereSource';
 import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder';
 import vtkAppendPolyData from 'vtk.js/Sources/Filters/General/AppendPolyData';
-
+import io from 'socket.io-client';
 const InputGroup = Input.Group;
 
 export default class offView extends Component {
@@ -97,12 +97,17 @@ export default class offView extends Component {
 
     componentDidMount() {
         this.result();
+        const socket = io('ws://192.168.2.134:8003');
+        socket.on('getStatus', function (msg) {
+            console.log(msg)
+        });
         Axis(this.state.model);
-        Axios.post("http://192.168.2.134:8003/getData", { "fileName": "model.stl" }).then(req => {
+        Axios.post("http://192.168.2.134:8003/getModel", { "fileName": "model" }).then(req => {
             console.log(req.data);
             // let href = "http://192.168.2.134:4000/visualization/"+req.data;
             // window.location.href = href;
         })
+
     };
     InputMapperRangeX = (e) => {
         this.setState({
@@ -120,6 +125,7 @@ export default class offView extends Component {
         })
     }
     render() {
+
         let {
             OpenGlRW, model, inputX, inputY, inputZ
         } = this.state;

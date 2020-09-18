@@ -1,8 +1,9 @@
-const express = require('express');
+const app = require('express')();
 const fs = require("fs");
 var path = require('path');
-var app = express();
 var cmd = require('node-cmd');
+var http = require('http').createServer(app);
+let io = require('socket.io')(http);
 app.all('/*', function (req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
     res.header('Access-Control-Allow-Headers', 'Content-Type, Content-Length, Authorization, Accept, X-Requested-With , yourHeaderFeild');
@@ -30,10 +31,8 @@ function readCSV(arr, res, extname) {
 function readVTK(arr, res, extname) {
     let obj = {};
     let newArr = [];
-    console.log(arr.length)
     newArr = arr[0].split("\n");
 
-    console.log(newArr.length)
     let POINTS = 0, CELLS = 0, CELL_TYPES = 0, LOOKUP_TABLE = 0;
     for (let i = 0; i < newArr.length; i++) {
         let array = newArr[i];
@@ -97,7 +96,7 @@ function readVTK(arr, res, extname) {
     res.end();
 }
 
-//read .Tiff file
+//write .Geo file
 function writeStlGeoFile(fileName) {
     let context = `
             Merge "${fileName}";
@@ -212,14 +211,12 @@ app.post('/vtkFoundFile', function (req, res) {
                 fs.readdir(pathName, function (err, files1) {
                     for (let j = 0; j < files1.length; j++) {
                         let file1 = files1[j];
-                        console.log(1)
                         let pathName1 = path.join(pathName, file1);
                         let arr = obj[file1] = [];
                         fs.readdir(pathName1, function (err, files2) {
                             arr = files2;
                         })
                         obj[file1] = arr;
-                        console.log(obj[file1])
                     }
                 })
             })()
@@ -267,6 +264,8 @@ app.post('/transformation', function (req, res) {
         );
     })
 })
+
+//模型预览
 app.post('/preview', function (req, res) {
     var postData = '';
     req.on('data', function (chunk) {
@@ -291,29 +290,61 @@ app.post('/preview', function (req, res) {
         );
     })
 })
+//创建项目
+app.post('/createPro', function (req, res) {
+    var postData = ''; -
+        req.on('data', function (chunk) {
+            // chunk 默认是一个二进制数据，和 data 拼接会自动 toString
+            postData += chunk;
+        });
+    req.on('end', function () {
+        //对url进行解码（url会对中文进行编码）
+        postData = decodeURI(postData);
+        let fileName = JSON.parse(postData).fileName;
+        fs.mkdir("/home/luyangfei/project/visualization/data/process/" + fileName, (err) => {
+            res.send({ status: "项目创建成功" })
+        });
+    })
+})
+//拉取模型数据
 app.post('/getModel', function (req, res) {
-    var postData = '';-
-    req.on('data', function (chunk) {
-        // chunk 默认是一个二进制数据，和 data 拼接会自动 toString
-        postData += chunk;
-    });
+    var postData = ''; -
+        req.on('data', function (chunk) {
+            // chunk 默认是一个二进制数据，和 data 拼接会自动 toString
+            postData += chunk;
+        });
     req.on('end', function () {
         let date = new Date();
         let time = date.getTime()
         //对url进行解码（url会对中文进行编码）
         postData = decodeURI(postData);
         let fileName = JSON.parse(postData).fileName;
-        let names = fileName.split('.');
-        let command = 'scp -r hzhang@12.2.5.7:/public/home/hzhang/src.tgz .';
+        // fs.readdir("/home/luyangfei/project/visualization/data/process/" + fileName + '/', (err, files) => {
+        let command = `sshpass -p "ma" scp -r ma@192.168.2.112:/home/ma/\{greenland5km3d.flavia.msh,greenland5km3d.flavia.res\} /home/luyangfei/project/visualization/data/process/`;
         cmd.get(
             command,
             function (err, data, stderr) {
-                console.log(err);
-                console.log(stderr);
-                
+                if (err !== null) {
+                    console.log(stderr);
+                } else {
+                    cmd.get("rm /home/luyangfei/project/visualization/data/dicom/greenland5km3d.flavia.msh.json", function () {
+                        res.send("http://192.168.2.134:4000/visualization/greenland5km3d.flavia.msh");
+                    })
+                }
             }
         );
+        // })
     })
 })
+//socket向前端发送状态
+io.on('connection', (socket) => {
+    console.log("用户已连接!");
+    fs.watchFile('/home/luyangfei/project/visualization/data/process/message.txt', (curr, prev) => {
+        var data = fs.readFileSync("/home/luyangfei/project/visualization/data/process/message.txt");
+        let ndata = data.toString();
+        io.emit('getStatus', ndata);
+    });
 
-app.listen(8003);
+    socket.on('disconnect', () => { console.log('用户已断开'); })
+})
+http.listen(8003);
