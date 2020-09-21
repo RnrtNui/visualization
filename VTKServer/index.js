@@ -1,3 +1,9 @@
+/**
+* 文件名：VTKServer/index.js
+* 作者：鲁杨飞
+* 创建时间：2020/8/24
+* 文件描述：VTKClient项目后端nodejs代码。
+ */
 const app = require('express')();
 const fs = require("fs");
 var path = require('path');
@@ -226,6 +232,8 @@ app.post('/vtkFoundFile', function (req, res) {
 
     })
 })
+
+//转换vtk网格
 app.post('/transformation', function (req, res) {
     var postData = '';
     req.on('data', function (chunk) {
@@ -264,7 +272,6 @@ app.post('/transformation', function (req, res) {
         );
     })
 })
-
 //模型预览
 app.post('/preview', function (req, res) {
     var postData = '';
@@ -336,7 +343,7 @@ app.post('/getModel', function (req, res) {
         // })
     })
 })
-//socket向前端发送状态
+//socket.io向前端发送状态
 io.on('connection', (socket) => {
     console.log("用户已连接!");
     fs.watchFile('/home/luyangfei/project/visualization/data/process/message.txt', (curr, prev) => {

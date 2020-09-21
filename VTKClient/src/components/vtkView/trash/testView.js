@@ -107,7 +107,6 @@ export default class offView extends Component {
             // let href = "http://192.168.2.134:4000/visualization/"+req.data;
             // window.location.href = href;
         })
-
     };
     InputMapperRangeX = (e) => {
         this.setState({
