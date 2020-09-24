@@ -23,8 +23,9 @@ type ProuploadFile struct {
 func (u *ProcessuploadFileController) Post() {
 	//读取配置路径
 	uploadFile := beego.AppConfig.String("ProcessPath")
+	beego.Debug(uploadFile)
 	//接收客户端传来的文件 uploadFile 与客户端保持一致
-	file, handler, err := u.Ctx.Request.FormFile("uploadFile")
+	file, handler, err := u.Ctx.Request.FormFile("file")
 	if err != nil {
 		beego.Error("upload file err", err)
 		return

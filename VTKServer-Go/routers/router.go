@@ -33,10 +33,11 @@ func init() {
 	beego.Router("/vizGetCaptchaId", &controllers.FirstGetCaptcha{})      //验证码id接口
 	beego.Router("/option/computeFile", &controllers.ComputerFileController{})
 	beego.Router("/vtkSave", &controllers.VtkSaveFileController{})
-	beego.Router("/objData", &controllers.ObjFileSaveController{}) //保存前端数组
-	beego.Router("/csvData", &controllers.CsvFileSaveController{}) //文件类型
-	beego.Router("/fileType", &controllers.TypeListController{})   //文件类型
-	beego.Router("/geoSave", &controllers.GeoDataSaveController{}) //保存地质数据接口
+	beego.Router("/objData", &controllers.ObjFileSaveController{})           //保存前端数组
+	beego.Router("/csvData", &controllers.CsvFileSaveController{})           //文件类型
+	beego.Router("/fileType", &controllers.TypeListController{})             //文件类型
+	beego.Router("/geoSave", &controllers.GeoDataSaveController{})           //保存地质数据接口
+	beego.Router("/transformation", &controllers.TransformationController{}) //转换VTK网格 20200921
 
 	//流程化接口
 	beego.Router("/process/upload", &controllers.ProcessuploadFileController{}) //流程上传
