@@ -9,7 +9,6 @@ package controllers
 import (
 	"VTKServer-Go/tool/execfunc"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"os/exec"
 	"strconv"
@@ -74,7 +73,7 @@ func (u *TransformationController) Post() {
 	gmshPath := "/home/luyangfei/Downloads/gmsh-4.6.0-Linux64/bin/gmsh"
 
 	switch inputFormatT {
-	case ".stl":
+	case ".stl", ".STL":
 		fileName := "stl.geo"
 		errT := execfunc.WriteStlGeoFile(processPath, fileNameT, fileName)
 		if errT != nil {
@@ -87,12 +86,13 @@ func (u *TransformationController) Post() {
 			stlVtkFilepath := processPath + filenameWithSuffix + "_" + timestr + outputFormatT
 
 			// 生成vtk文件
-			_, err := exec.Command(gmshPath, geoFile, nummeshTypeT, "-o", stlVtkFilepath, "-format", outPutFormat).Output()
+			err := exec.Command(gmshPath, geoFile, nummeshTypeT, "-o", stlVtkFilepath, "-format", outPutFormat).Run()
 			// beego.Error("err :", err)
 			if err != nil {
-				fmt.Println("transformation.go 94:", err)
+				u.Data["json"] = map[string]interface{}{"url": "Gmsh command execution error!"}
+				u.ServeJSON()
+				return
 			}
-
 			// cmd := exec.Command(gmshPath, geoFile, nummeshTypeT, "-o", stlVtkFilepath, "-format", outPutFormat)
 			// beego.Error("err :", cmd)
 
@@ -102,37 +102,7 @@ func (u *TransformationController) Post() {
 			return
 		}
 
-	case ".STL":
-		fileName := "stl.geo"
-		errT := execfunc.WriteStlGeoFile(processPath, fileNameT, fileName)
-		if errT != nil {
-			u.Data["json"] = map[string]interface{}{"message": "vtk文件保存失败"}
-			u.ServeJSON()
-			return
-		} else {
-			geoFile := processPath + fileName // 拼装geo文件路径
-			nummeshTypeT := "-" + meshTypeT   // 去掉点以后，拼装命令
-			stlVtkFilepath := processPath + filenameWithSuffix + "_" + timestr + outputFormatT
-
-			// 生成vtk文件
-			_, err := exec.Command(gmshPath, geoFile, nummeshTypeT, "-o", stlVtkFilepath, "-format", outPutFormat).Output()
-			// beego.Error("err :", err)
-			// if err != nil {
-			// 	u.Data["json"] = map[string]interface{}{"url": err}
-			// 	u.ServeJSON()
-			// 	return
-			// }
-			if err != nil {
-				fmt.Println("transformation.go 127:", err)
-			}
-
-			vtkPath := "http://192.168.2.134:4000/visualization/" + filenameWithSuffix + "_" + timestr + outputFormatT
-			u.Data["json"] = map[string]interface{}{"url": vtkPath}
-			u.ServeJSON()
-			return
-
-		}
-	case ".stp":
+	case ".stp", ".step":
 		fileName := "stp.geo"
 		errT := execfunc.WriteStpGeoFile(processPath, fileNameT, fileName)
 		if errT != nil {
@@ -146,10 +116,10 @@ func (u *TransformationController) Post() {
 			stlVtkFilepath := processPath + filenameWithSuffix + "_" + timestr + outputFormatT
 
 			// 生成vtk文件
-			_, err := exec.Command(gmshPath, geoFile, nummeshTypeT, "-o", stlVtkFilepath, "-format", outPutFormat).Output()
+			err := exec.Command(gmshPath, geoFile, nummeshTypeT, "-o", stlVtkFilepath, "-format", outPutFormat).Run()
 			// beego.Error("err :", err)
 			if err != nil {
-				u.Data["json"] = map[string]interface{}{"url": err}
+				u.Data["json"] = map[string]interface{}{"url": "Gmsh command execution error!"}
 				u.ServeJSON()
 				return
 			}
@@ -159,34 +129,8 @@ func (u *TransformationController) Post() {
 			u.ServeJSON()
 			return
 		}
-	case ".step":
-		fileName := "stp.geo"
-		errT := execfunc.WriteStpGeoFile(processPath, fileNameT, fileName)
-		if errT != nil {
-			u.Data["json"] = map[string]interface{}{"message": "vtk文件保存失败"}
-			u.ServeJSON()
-			return
-		} else {
 
-			geoFile := processPath + fileName // 拼装geo文件路径
-			nummeshTypeT := "-" + meshTypeT   // 去掉点以后，拼装命令
-			stlVtkFilepath := processPath + filenameWithSuffix + "_" + timestr + outputFormatT
-
-			// 生成vtk文件
-			_, err := exec.Command(gmshPath, geoFile, nummeshTypeT, "-o", stlVtkFilepath, "-format", outPutFormat).Output()
-			// beego.Error("err :", err)
-			if err != nil {
-				u.Data["json"] = map[string]interface{}{"url": err}
-				u.ServeJSON()
-				return
-			}
-
-			vtkPath := "http://192.168.2.134:4000/visualization/" + filenameWithSuffix + "_" + timestr + outputFormatT
-			u.Data["json"] = map[string]interface{}{"url": vtkPath}
-			u.ServeJSON()
-			return
-		}
-	case ".igs":
+	case ".igs", ".iges":
 		fileName := "igs.geo"
 		errT := execfunc.WriteIgsGeoFile(processPath, fileNameT, fileName)
 		if errT != nil {
@@ -199,10 +143,10 @@ func (u *TransformationController) Post() {
 			stlVtkFilepath := processPath + filenameWithSuffix + "_" + timestr + outputFormatT
 
 			// 生成vtk文件
-			_, err := exec.Command(gmshPath, geoFile, nummeshTypeT, "-o", stlVtkFilepath, "-format", outPutFormat).Output()
+			err := exec.Command(gmshPath, geoFile, nummeshTypeT, "-o", stlVtkFilepath, "-format", outPutFormat).Run()
 			// beego.Error("err :", err)
 			if err != nil {
-				u.Data["json"] = map[string]interface{}{"url": err}
+				u.Data["json"] = map[string]interface{}{"url": "Gmsh command execution error!"}
 				u.ServeJSON()
 				return
 			}
@@ -212,34 +156,6 @@ func (u *TransformationController) Post() {
 			u.ServeJSON()
 			return
 		}
-	case ".iges":
-		//WriteStlGeoFile(fileNameT);
-		fileName := "igs.geo"
-		errT := execfunc.WriteIgsGeoFile(processPath, fileNameT, fileName)
-		if errT != nil {
-			u.Data["json"] = map[string]interface{}{"message": "vtk文件保存失败"}
-			u.ServeJSON()
-			return
-		} else {
-			geoFile := processPath + fileName // 拼装geo文件路径
-			nummeshTypeT := "-" + meshTypeT   // 去掉点以后，拼装命令
-			stlVtkFilepath := processPath + filenameWithSuffix + "_" + timestr + outputFormatT
-
-			// 生成vtk文件
-			_, err := exec.Command(gmshPath, geoFile, nummeshTypeT, "-o", stlVtkFilepath, "-format", outPutFormat).Output()
-			// beego.Error("err :", err)
-			if err != nil {
-				u.Data["json"] = map[string]interface{}{"url": err}
-				u.ServeJSON()
-				return
-			}
-
-			vtkPath := "http://192.168.2.134:4000/visualization/" + filenameWithSuffix + "_" + timestr + outputFormatT
-			u.Data["json"] = map[string]interface{}{"url": vtkPath}
-			u.ServeJSON()
-			return
-		}
-
 	}
 
 }
