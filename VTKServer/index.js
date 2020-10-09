@@ -6,9 +6,9 @@
  */
 const app = require('express')();
 const fs = require("fs");
-var path = require('path');
-var cmd = require('node-cmd');
-var http = require('http').createServer(app);
+let path = require('path');
+let cmd = require('node-cmd');
+let http = require('http').createServer(app);
 let io = require('socket.io')(http);
 app.all('/*', function (req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
@@ -19,7 +19,12 @@ app.all('/*', function (req, res, next) {
     res.header("Content-Type", "application/json;charset=utf-8");
     next();
 });
-let newObj = {}
+let newObj = {};
+let dirPath = '/public/home/hzhang/hwtest/';
+let username = "hzhang";
+let ip = '12.2.5.7';
+let password = "hzhang@CASJC0424A7";
+let name = 'hw';
 //read .CSV file
 function readCSV(arr, res, extname) {
     let newArr = [];
@@ -138,8 +143,8 @@ function writeStpGeoFile(fileName) {
     let context = `
             SetFactory("OpenCASCADE");
             v() = ShapeFromFile("${fileName}");
-            Mesh.CharacteristicLengthMin = 3;
-            Mesh.CharacteristicLengthMax = 3;
+            Mesh.CharacteristicLengthMin = 6;
+            Mesh.CharacteristicLengthMax = 6;
         `
     fs.writeFile('../data/process/stp.geo', context, function (err) {
         if (err) {
@@ -250,7 +255,6 @@ app.post('/transformation', function (req, res) {
             meshType = JSON.parse(postData).meshType,
             outputFormat = JSON.parse(postData).outputFormat;
         let names = fileName.split('.');
-        console.log(inputFormat);
         if (inputFormat === ".stl" || inputFormat === ".STL") {
             writeStlGeoFile(fileName);
             fileName = "stl.geo";
@@ -267,36 +271,16 @@ app.post('/transformation', function (req, res) {
         cmd.get(
             command,
             function (err, data, stderr) {
+                console.log(data);
                 res.send("http://192.168.2.134:4000/visualization/" + names[0] + "_" + time + outputFormat);
             }
         );
     })
 })
 //模型预览
-app.post('/preview', function (req, res) {
-    var postData = '';
-    req.on('data', function (chunk) {
-        // chunk 默认是一个二进制数据，和 data 拼接会自动 toString
-        postData += chunk;
-    });
-    req.on('end', function () {
-        let date = new Date();
-        let time = date.getTime()
-        //对url进行解码（url会对中文进行编码）
-        postData = decodeURI(postData);
-        let fileName = JSON.parse(postData).fileName;
-        let names = fileName.split('.');
-        let gmshPath = "/home/luyangfei/Downloads/gmsh-4.6.0-Linux64/bin/gmsh";
-        let processPath = "/home/luyangfei/project/visualization/data/process/";
-        let command = gmshPath + ' ' + processPath + fileName + ' -o ' + processPath + names[0] + "_" + time + '.vtk' + ' -format vtk';
-        cmd.get(
-            command,
-            function (err, data, stderr) {
-                res.send("http://192.168.2.134:4000/visualization/" + names[0] + "_" + time + '.vtk');
-            }
-        );
-    })
-})
+// app.post('/preview', function (req, res) {
+// })
+
 //创建项目
 app.post('/createPro', function (req, res) {
     var postData = ''; -
@@ -327,7 +311,7 @@ app.post('/getModel', function (req, res) {
         postData = decodeURI(postData);
         let fileName = JSON.parse(postData).fileName;
         // fs.readdir("/home/luyangfei/project/visualization/data/process/" + fileName + '/', (err, files) => {
-        let command = `sshpass -p "ma" scp -r ma@192.168.2.112:/home/ma/\{greenland5km3d.flavia.msh,greenland5km3d.flavia.res\} /home/luyangfei/project/visualization/data/process/`;
+        let command = `sshpass -p "ma" scp -r -o "StrictHostKeyChecking=no" ma@192.168.2.112:/home/ma/\{greenland5km3d.flavia.msh,greenland5km3d.flavia.res\} /home/luyangfei/project/visualization/data/process/`;
         cmd.get(
             command,
             function (err, data, stderr) {
@@ -343,15 +327,141 @@ app.post('/getModel', function (req, res) {
         // })
     })
 })
+// sshpass -p "hzhang@CASJC0424A7" scp -r -o "StrictHostKeyChecking=no" hzhang@12.2.5.7
+
+//SSH远程连接
+app.post('/sshConnection', function (req, res) {
+    var postData = ''; -
+        req.on('data', function (chunk) {
+            // chunk 默认是一个二进制数据，和 data 拼接会自动 toString
+            postData += chunk;
+        });
+    req.on('end', function () {
+        //对url进行解码（url会对中文进行编码）
+        postData = decodeURI(postData);
+        username = JSON.parse(postData).username;
+        ip = JSON.parse(postData).ip;
+        password = JSON.parse(postData).password;
+        res.send("success");
+    })
+})
+//指定目录
+app.post('/assignPath', function (req, res) {
+    var postData = ''; -
+        req.on('data', function (chunk) {
+            postData += chunk;
+        });
+    req.on('end', function () {
+        postData = decodeURI(postData);
+        dirPath = JSON.parse(postData).dirPath;
+        let command = `sshpass -p "${password}" ssh -o "StrictHostKeyChecking=no" ${username}@${ip} "ls ${dirPath}"`;
+        cmd.get(
+            command,
+            function (err, data, stderr) {
+                if (err !== null) {
+                    res.send(false);
+                } else {
+                    res.send(true);
+                }
+            }
+        );
+    })
+})
+//生成作业脚本
+app.post('/taskScripts', function (req, res) {
+    var postData = ''; -
+        req.on('data', function (chunk) {
+            postData += chunk;
+        });
+    req.on('end', function () {
+        //对url进行解码（url会对中文进行编码）
+        postData = JSON.parse(decodeURI(postData)).params;
+        let context =
+            `#!/bin/bash
+#PBS -N ${postData.name}
+#PBS -l nodes=${postData.resourcesNodes}:ppn=${postData.resourcesPpn}
+#PBS -q ${postData.queue} 
+#PBS -o ${dirPath}${postData.name}.log
+#PBS -e ${dirPath}${postData.name}.err
+#PBS -l walltime=${postData.walltime}
+        
+${postData.command}`
+        fs.writeFile('../data/process/' + postData.name + '.pbs', context, function (err) {
+            if (err) {
+                console.log('脚本写入失败', err);
+            } else {
+                name = postData.name;
+                console.log('脚本写入成功');
+            }
+        })
+    })
+})
+//执行作业脚本
+app.post('/runTaskScripts', function (req, res) {
+    console.log(name);
+    let command = `sshpass -p "${password}" scp -r -o "StrictHostKeyChecking=no" /home/luyangfei/project/visualization/data/process/${name + '.pbs'} ${username}@${ip}:${dirPath}`;
+    cmd.get(
+        command,
+        function (err, data, stderr) {
+            if (err !== null) {
+                console.log(false)
+            } else {
+                // console.log(true);
+                cmd.get(
+                    `sshpass -p "${password}" ssh -o "StrictHostKeyChecking=no" ${username}@${ip} "rm ${dirPath}${name}.log ${dirPath}${name}.err"`,
+                    function (err, data, stderr) {
+                        console.log("日志删除成功!")
+                        cmd.get(
+                            `sshpass -p "${password}" ssh -o "StrictHostKeyChecking=no" ${username}@${ip} qsub ${dirPath}${name}.pbs`,
+                            function (err, data, stderr) {
+                                if (err !== null) {
+                                    console.log(stderr)
+                                } else {
+                                    console.log(data)
+                                    io.emit('getStatus', "start");
+                                    let getStatus = () => {
+                                        cmd.get(
+                                            `sshpass -p "${password}" ssh -o "StrictHostKeyChecking=no" ${username}@${ip} /usr/bin/cat ${dirPath}${name}.log`,
+                                            function (err, data, stderr) {
+                                                if (data.indexOf('end') === -1) {
+                                                    io.emit('getStatus', "...");
+                                                    return getStatus();
+                                                } else {
+                                                    fs.writeFile('/home/luyangfei/project/visualization/data/process/message.txt', "end", function (err) {
+                                                        if (err) {
+                                                            console.log('日志写入失败', err);
+                                                        } else {
+                                                            io.emit('getStatus', "end");
+                                                            res.send(true);
+                                                        }
+                                                    })
+                                                }
+                                            }
+                                        );
+                                    }
+                                    getStatus();
+                                }
+                            }
+                        );
+                    }
+                );
+            }
+        }
+    );
+})
 //socket.io向前端发送状态
 io.on('connection', (socket) => {
-    console.log("用户已连接!");
+    let user = socket.handshake.address.split('ffff:')[1];
+    // console.log(socket.handshake);
+    console.log(user + "已连接!");
     fs.watchFile('/home/luyangfei/project/visualization/data/process/message.txt', (curr, prev) => {
         var data = fs.readFileSync("/home/luyangfei/project/visualization/data/process/message.txt");
         let ndata = data.toString();
         io.emit('getStatus', ndata);
     });
 
-    socket.on('disconnect', () => { console.log('用户已断开'); })
+    socket.on('disconnect', () => {
+        console.log(user + '已断开连接!');
+    })
 })
 http.listen(8003);

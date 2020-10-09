@@ -21,5 +21,6 @@ target/
 ### webpack ###
 node_modules/
 data/
+webssh2/
 VTKServer-Go/VTKServer-Go
 VTKServer-Go/VTKServer-Go.exe

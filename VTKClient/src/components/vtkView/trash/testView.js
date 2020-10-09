@@ -123,6 +123,25 @@ export default class offView extends Component {
             inputZ: e.target.value
         })
     }
+    showPic(obj) {
+        const getObjectURL = (file) => {
+            var url = null;
+            // 下面函数执行的效果是一样的，只是需要针对不同的浏览器执行不同的 js 函数而已
+            if (window.createObjectURL != undefined) {   // basic
+                url = window.createObjectURL(file);
+            } else if (window.URL != undefined) {        // mozilla(firefox)
+                url = window.URL.createObjectURL(file);
+            } else if (window.webkitURL != undefined) {  // webkit or chrome
+                url = window.webkitURL.createObjectURL(file);
+            }
+            return url;
+        }
+        var fileUrl = getObjectURL(document.querySelector("#upload").files[0]);
+        if (fileUrl != null) {
+            console.log(fileUrl)
+        }
+    }
+
     render() {
 
         let {
@@ -292,8 +311,9 @@ export default class offView extends Component {
         }
         return (
             <div>
+                <input id="upload" type="file" name="pic" onChange={this.showPic}></input>
                 <div className="vtk-container" ref={this.container} style={{ "minHeight": "100px", "minWidth": "100px", "width": "100%", "height": "100vh" }} ></div>
-                <Input.Group compact style={{ position: "absolute", left: "0", top: "0" }}>
+                {/* <Input.Group compact style={{ position: "absolute", left: "0", top: "0" }}>
                     <Input style={{ width: 45, textAlign: 'center' }} placeholder={inputX} onChange={this.InputMapperRangeX} />
                     <Input
                         className="site-input-split"
@@ -335,7 +355,7 @@ export default class offView extends Component {
                         onChange={this.InputMapperRangeZ}
                         placeholder={inputZ}
                     />
-                </Input.Group>
+                </Input.Group> */}
             </div >
         )
     }

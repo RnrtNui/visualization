@@ -8,9 +8,7 @@ import vtk from 'vtk.js/Sources/vtk';
 import Draggable from 'react-draggable';
 import React, { Component } from 'react';
 import { goUrl } from "../../../url";
-import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder';
 import axios from 'axios';
-import vtkAppendPolyData from 'vtk.js/Sources/Filters/General/AppendPolyData';
 import vtkElevationReader from 'vtk.js/Sources/IO/Misc/ElevationReader';
 import { Input, Checkbox, Col, Row } from "antd";
 import vtkActor from 'vtk.js/Sources/Rendering/Core/Actor';
@@ -18,12 +16,8 @@ import vtkMapper from 'vtk.js/Sources/Rendering/Core/Mapper';
 import vtkLookupTable from 'vtk.js/Sources/Common/Core/LookupTable';
 import vtkCalculator from 'vtk.js/Sources/Filters/General/Calculator';
 import vtkPlaneSource from 'vtk.js/Sources/Filters/Sources/PlaneSource';
-import vtkCubeSource from 'vtk.js/Sources/Filters/Sources/CubeSource';
 import { FieldDataTypes } from 'vtk.js/Sources/Common/DataModel/DataSet/Constants';
 import { AttributeTypes } from 'vtk.js/Sources/Common/DataModel/DataSetAttributes/Constants';
-import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps';
-import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
-import colorMode from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps.json'
 import { Rendering, Screen, reassignManipulators, changeManipulators } from "../common/index"
 const InputGroup = Input.Group;
 
@@ -37,12 +31,8 @@ export default class csvView extends Component {
             boxBgColor: "#ccc",
             position: {
                 x: 0,
-                y: 0,
-                z: 0
+                y: 0
             },
-            xLength: 0,
-            yLength: 0,
-            zLength: 0,
             cells: [],
             value: 0,
             displayBox: "none",
@@ -155,358 +145,131 @@ export default class csvView extends Component {
         if (data.type === ".csv") {
             let yLength = data.data.length;
             let xLength = data.data[0].length;
-            let zLength = yLength;
-
-            let arr = data.data;
-            let array = [];
-            for (let i = 0; i < arr.length - 1; i++) {
-                let arr1 = [], arr2 = [], arr3 = [], arr4 = [], arr5 = [], arr6 = [], arr7 = [], arr8 = [], arr9 = [];
-                array.push(arr[i])
-                for (let j = 0; j < arr[0].length; j++) {
-                    arr1[j] = Number(arr[i][j]) + (Number(arr[i + 1][j]) - Number(arr[i][j])) * 0.1;
-                    arr2[j] = Number(arr[i][j]) + (Number(arr[i + 1][j]) - Number(arr[i][j])) * 0.2;
-                    arr3[j] = Number(arr[i][j]) + (Number(arr[i + 1][j]) - Number(arr[i][j])) * 0.3;
-                    arr4[j] = Number(arr[i][j]) + (Number(arr[i + 1][j]) - Number(arr[i][j])) * 0.4;
-                    arr5[j] = Number(arr[i][j]) + (Number(arr[i + 1][j]) - Number(arr[i][j])) * 0.5;
-                    arr6[j] = Number(arr[i][j]) + (Number(arr[i + 1][j]) - Number(arr[i][j])) * 0.6;
-                    arr7[j] = Number(arr[i][j]) + (Number(arr[i + 1][j]) - Number(arr[i][j])) * 0.7;
-                    arr8[j] = Number(arr[i][j]) + (Number(arr[i + 1][j]) - Number(arr[i][j])) * 0.8;
-                    arr9[j] = Number(arr[i][j]) + (Number(arr[i + 1][j]) - Number(arr[i][j])) * 0.9;
-                }
-                array.push(arr1, arr2, arr3, arr4, arr5, arr6, arr7, arr8, arr9)
-            }
-            array.push(arr[arr.length - 1]);
-            for (let i = 0; i < array.length; i++) {
-                let xRes = [];
-                for (let j = 0; j < array[i].length - 1; j++) {
-                    let num = Number(array[i][j + 1]) - Number(array[i][j])
-                    xRes.push(array[i][j], Number(array[i][j]) + num * 0.1,
-                    Number(array[i][j]) + num * 0.2,
-                    Number(array[i][j]) + num * 0.3,
-                    Number(array[i][j]) + num * 0.4,
-                    Number(array[i][j]) + num * 0.5,
-                    Number(array[i][j]) + num * 0.6,
-                    Number(array[i][j]) + num * 0.7,
-                    Number(array[i][j]) + num * 0.8,
-                    Number(array[i][j]) + num * 0.9,)
-                }
-                xRes.push(Number(array[i][array[i].length - 1]));
-                array[i]=xRes;
-            }
-            yLength = array.length;
-            xLength = array[0].length;
-            console.log(array);
-            console.log(xLength,yLength);
-            this.setState({
-                xLength: xLength,
-                yLength: yLength,
-                zLength: zLength,
-            })
+            let SCALARS = [];
             Rendering(model, this.container);
-            
+            for (let i = 0; i < yLength; i++) {
+                for (let j = 0; j < xLength; j++) {
+                    SCALARS.push(data.data[i][j]);
+                }
+            }
             const lookupTable = vtkLookupTable.newInstance({
+                hueRange: [0, 0.6],
+                saturationRange: [0, 0],
+                valueRange: [0, 1],
+                alphaRange: [1, 1],
+
+                nanColor: [0.5, 0.0, 0.0, 1.0],
+                belowRangeColor: [0.0, 0.0, 0.0, 1.0],
+                aboveRangeColor: [1.0, 1.0, 1.0, 1.0],
+                useAboveRangeColor: false,
+                useBelowRangeColor: false,
             });
+            document.querySelector('.hueRangemin').value = 0;
+            document.querySelector('.hueRangemax').value = 0.6;
+            document.querySelector('.saturationRangemin').value = 0;
+            document.querySelector('.saturationRangemax').value = 0;
+            document.querySelector('.valueRangemin').value = 0;
+            document.querySelector('.valueRangemax').value = 1;
             // 定义查找表
             model.lookupTable = lookupTable;
+            function VTKPrepare(model) {
 
-            // 定义映射器
-            const mapper = vtkMapper.newInstance({
-                useLookupTableScalarRange: true,
-                lookupTable,
-            });
-            // 定义平面源
-            const planeSource = vtkPlaneSource.newInstance({
-                XResolution: xLength * 2 - 1,
-                YResolution: yLength - 1,
-            });
+                // 定义映射器
+                const mapper = vtkMapper.newInstance({
+                    useLookupTableScalarRange: true,
+                    lookupTable,
+                });
+                // 定义平面源
+                const planeSource = vtkPlaneSource.newInstance({
+                    XResolution: xLength - 1,
+                    YResolution: yLength - 1,
 
-            const simpleFilter = vtkCalculator.newInstance();
-            model.simpleFilter = simpleFilter;
+                });
+                const simpleFilter = vtkCalculator.newInstance();
+                model.simpleFilter = simpleFilter;
 
-            // 生成的“z”数组将成为默认标量，因此平面映射器将按“z”着色：
-            simpleFilter.setInputConnection(planeSource.getOutputPort());
-            mapper.setInputConnection(simpleFilter.getOutputPort());
+                // 生成的“z”数组将成为默认标量，因此平面映射器将按“z”着色：
+                simpleFilter.setInputConnection(planeSource.getOutputPort());
+                mapper.setInputConnection(simpleFilter.getOutputPort());
 
-            // 更新VTK场景
-            model.renderer.resetCamera();
-            model.renderer.resetCameraClippingRange();
+                // 更新VTK场景
+                model.renderer.resetCamera();
+                model.renderer.resetCameraClippingRange();
 
-            model.simpleFilter.setFormula({
-                getArrays: (inputDataSets) => ({
-                    input: [
-                        { location: FieldDataTypes.COORDINATE }], // 需要点坐标作为输入
-                    output: [
-                        {
-                            location: FieldDataTypes.POINT,   // 这个数组将是点数据。。。
-                            name: 'z',                // ... 有了名字。。。
-                            dataType: 'Float64Array',         // ... 这种类型的。。。
-                            attribute: AttributeTypes.SCALARS // ... 将被标记为默认标量。
-                        },
-                    ]
-                }),
-                evaluate: (arraysIn, arraysOut) => {
-                    const [z] = arraysOut.map(d => d.getData());
-                    for (let i = 0; i < yLength; i++) {
-                        for (let j = 0; j < xLength; j++) {
-                            let index = i * xLength + j;
-                            z[index] = array[i][j];
+                model.simpleFilter.setFormula({
+                    getArrays: (inputDataSets) => ({
+                        input: [
+                            { location: FieldDataTypes.COORDINATE }], // 需要点坐标作为输入
+                        output: [
+                            {
+                                location: FieldDataTypes.POINT,   // 这个数组将是点数据。。。
+                                name: 'z',                // ... 有了名字。。。
+                                dataType: 'Float64Array',         // ... 这种类型的。。。
+                                attribute: AttributeTypes.SCALARS // ... 将被标记为默认标量。
+                            },
+                        ]
+                    }),
+                    evaluate: (arraysIn, arraysOut) => {
+                        const [z] = arraysOut.map(d => d.getData());
+                        for (let i = 0; i < yLength; i++) {
+                            for (let j = 0; j < xLength; j++) {
+                                let index = i * xLength + j;
+                                z[index] = data.data[i][j];
+                            }
                         }
+                        arraysOut.forEach(x => x.modified());
                     }
-                    arraysOut.forEach(x => x.modified());
-                }
-            });
-            planeSource.set({ "xResolution": xLength - 1 });
-            planeSource.set({ "yResolution": yLength - 1 });
-            planeSource.set({ "Origin": [0, 0, 0] });
-            planeSource.set({ "Point1": [xLength, 0, 0] });
-            planeSource.set({ "Point2": [0, -yLength, 0] });
-            let cen = planeSource.getCenter();
-            // 定义actor
-            const actor = vtkActor.newInstance();
-            // 将定义的映射器设置为定义的参与者
-            // pl2.
-            actor.setMapper(mapper);
-            let polydata = actor.getMapper().getInputData().getState();
-            let polydata2 = JSON.parse(JSON.stringify(polydata))
-            cen[2] = 100;
-            planeSource.set({ "Origin": [0, 0, yLength] });
-            planeSource.set({ "Point1": [xLength, 0, yLength] });
-            planeSource.set({ "Point2": [0, -yLength, yLength] });
-            planeSource.setCenter(cen[0], cen[1], yLength);
+                });
+                // 设置模型的属性
+                const [min, max] = model.simpleFilter
+                    .getOutputData()
+                    .getPointData()
+                    .getScalars()
+                    .getRange();
+                document.querySelector('.min').value = min;
+                document.querySelector('.max').value = max;
+                model.lookupTable.setMappingRange(min, max);
+                planeSource.set({ "xResolution": xLength - 1 });
+                planeSource.set({ "yResolution": yLength - 1 });
+                planeSource.set({ "Origin": [0, 0, 0] });
+                planeSource.set({ "Point1": [xLength, 0, 0] });
+                planeSource.set({ "Point2": [0, -yLength, 0] });
+                // 定义actor
+                const actor = vtkActor.newInstance();
+                // 将定义的映射器设置为定义的参与者
+                actor.setMapper(mapper);
+                let polydata = actor.getMapper().getInputData().getState();
+                const mapper2 = vtkMapper.newInstance({
+                    useLookupTableScalarRange: true,
+                    lookupTable,
+                });
+                mapper2.setInputData(vtk(polydata));
+                const actor2 = vtkActor.newInstance();
+                actor2.setMapper(mapper2);
+                // 将actor添加到渲染器
+                model.renderer.addActor(actor2);
+                // Populate with initial manipulators
+                model.interactorStyle.setCenterOfRotation(mapper.getCenter());
+                reassignManipulators(model);
+            }
+            VTKPrepare(model);
 
-
-            const mapper2 = vtkMapper.newInstance({
-                useLookupTableScalarRange: true,
-                lookupTable,
-            });
-            let point2 = [];
-
-            let topPoint = [], leftPoint = [], rightPoint = [], bottomPoint = [];
-            let source = polydata.points.values;
-            for (let i = 0; i < xLength * 3; i += 3) {
-                topPoint.push(source[i], source[i + 1], source[i + 2]);
-            }
-            for (let i = 0; i < xLength * 3; i += 3) {
-                topPoint.push(source[i], source[i + 1], yLength);
-            }
-            for (let i = 0; i < xLength * yLength * 3; i += 3 * xLength) {
-                leftPoint.push(source[i], source[i + 1], source[i + 2]);
-            }
-            for (let i = 0; i < xLength * yLength * 3; i += 3 * xLength) {
-                leftPoint.push(source[i], source[i + 1], yLength);
-            }
-            for (let i = (xLength - 1) * 3; i < xLength * yLength * 3; i += 3 * xLength) {
-                rightPoint.push(source[i], source[i + 1], source[i + 2]);
-            }
-            for (let i = (xLength - 1) * 3; i < xLength * yLength * 3; i += 3 * xLength) {
-                rightPoint.push(source[i], source[i + 1], yLength);
-            }
-            for (let i = (yLength - 1) * xLength * 3; i < xLength * yLength * 3; i += 3) {
-                bottomPoint.push(source[i], source[i + 1], source[i + 2]);
-            }
-            for (let i = (yLength - 1) * xLength * 3; i < xLength * yLength * 3; i += 3) {
-                bottomPoint.push(source[i], source[i + 1], yLength);
-            }
-            for (let i = 0; i < source.length; i += 3) {
-                point2.push(source[i], source[i + 1], yLength);
-            }
-            polydata2.points.values = point2;
-            let topCell = [], leftCell = [], rightCell = [], bottomCell = [];
-            for (let i = 0; i < xLength - 1; i++) {
-                topCell.push("3", i, i + 1, i + xLength + 1)
-                topCell.push("3", i, i + xLength + 1, i + xLength)
-                bottomCell.push("3", i, i + 1, i + xLength + 1)
-                bottomCell.push("3", i, i + xLength + 1, i + xLength)
-
-            }
-            for (let i = 0; i < yLength - 1; i++) {
-                leftCell.push("3", i, i + 1, i + yLength + 1)
-                leftCell.push("3", i, i + yLength + 1, i + yLength)
-                rightCell.push("3", i, i + 1, i + yLength + 1)
-                rightCell.push("3", i, i + yLength + 1, i + yLength)
-            }
-            let topData = [], leftData = [], rightData = [], bottomData = [];
-            topData = topData.concat(array[0], array[0]);
-            for (let i = 0; i < yLength; i++) {
-                leftData.push(array[i][0])
-                rightData.push(array[i][xLength - 1])
-            }
-            for (let i = 0; i < yLength; i++) {
-                leftData.push(array[i][0])
-                rightData.push(array[i][xLength - 1])
-            }
-            bottomData = bottomData.concat(array[yLength - 1], array[yLength - 1]);
-            let topPlane = vtk({
-                vtkClass: 'vtkPolyData',
-                points: {
-                    vtkClass: 'vtkPoints',
-                    dataType: 'Float32Array',
-                    numberOfComponents: 3,
-                    values: topPoint,
-                },
-                lines: {
-                    vtkClass: 'vtkCellArray',
-                    dataType: 'Float32Array',
-                    values: topCell,
-                },
-                pointData: {
-                    vtkClass: 'vtkDataSetAttributes',
-                    activeScalars: 0,
-                    arrays: [{
-                        data: {
-                            vtkClass: 'vtkDataArray',
-                            name: 'pointScalars',
-                            dataType: 'Float32Array',
-                            values: topData,
-                        },
-                    }],
-                }
-            })
-
-            let leftPlane = vtk({
-                vtkClass: 'vtkPolyData',
-                points: {
-                    vtkClass: 'vtkPoints',
-                    dataType: 'Float32Array',
-                    numberOfComponents: 3,
-                    values: leftPoint,
-                },
-                lines: {
-                    vtkClass: 'vtkCellArray',
-                    dataType: 'Float32Array',
-                    values: leftCell,
-                },
-                pointData: {
-                    vtkClass: 'vtkDataSetAttributes',
-                    activeScalars: 0,
-                    arrays: [{
-                        data: {
-                            vtkClass: 'vtkDataArray',
-                            name: 'pointScalars',
-                            dataType: 'Float32Array',
-                            values: leftData,
-                        },
-                    }],
-                }
-            })
-            let rightPlane = vtk({
-                vtkClass: 'vtkPolyData',
-                points: {
-                    vtkClass: 'vtkPoints',
-                    dataType: 'Float32Array',
-                    numberOfComponents: 3,
-                    values: rightPoint,
-                },
-                lines: {
-                    vtkClass: 'vtkCellArray',
-                    dataType: 'Float32Array',
-                    values: rightCell,
-                },
-                pointData: {
-                    vtkClass: 'vtkDataSetAttributes',
-                    activeScalars: 0,
-                    arrays: [{
-                        data: {
-                            vtkClass: 'vtkDataArray',
-                            name: 'pointScalars',
-                            dataType: 'Float32Array',
-                            values: rightData,
-                        },
-                    }],
-                }
-            })
-            let bottomPlane = vtk({
-                vtkClass: 'vtkPolyData',
-                points: {
-                    vtkClass: 'vtkPoints',
-                    dataType: 'Float32Array',
-                    numberOfComponents: 3,
-                    values: bottomPoint,
-                },
-                polys: {
-                    vtkClass: 'vtkCellArray',
-                    dataType: 'Float32Array',
-                    values: bottomCell,
-                },
-                pointData: {
-                    vtkClass: 'vtkDataSetAttributes',
-                    activeScalars: 0,
-                    arrays: [{
-                        data: {
-                            vtkClass: 'vtkDataArray',
-                            name: 'pointScalars',
-                            dataType: 'Float32Array',
-                            values: bottomData,
-                        },
-                    }],
-                }
-            })
-
-            const sourceData = vtkAppendPolyData.newInstance();
-            sourceData.setInputData(vtk(polydata));
-            sourceData.addInputData(vtk(polydata2));
-            sourceData.addInputData(vtk(topPlane));
-            sourceData.addInputData(vtk(leftPlane));
-            sourceData.addInputData(vtk(rightPlane));
-            sourceData.addInputData(vtk(bottomPlane));
-            mapper2.setInputConnection(sourceData.getOutputPort());
-            const actor2 = vtkActor.newInstance();
-            actor2.setMapper(mapper2);
-            // 将actor添加到渲染器
-            //创建第二个平面
-            let data1 = JSON.parse(JSON.stringify(actor2.getMapper().getInputData().getState()));
-            let datas = vtk(data1);
-            vtkMatrixBuilder
-                .buildFromDegree()
-                .translate(-xLength / 2, 0, -zLength / 2)
-                .apply(datas.getPoints().getData());
-            model.data = datas
-            // Populate with initial manipulators
-            let pointDatas = JSON.parse(JSON.stringify(data1.pointData.arrays[0].data.values))
-            console.log(xLength, yLength)
-            pointDatas.sort(function (a, b) {
-                return a - b;
-            });
-            let unique = [...new Set(pointDatas)];
-            if (unique[0] === "null") unique.splice(0, 1);
-            unique.sort(function (a, b) {
-                return a - b;
-            });
-            let min = Number(unique[0]);
-            let max = Number(unique[unique.length - 1]);
-            lookupTable.setMappingRange(min, max);
-            // lookupTable.setHueRange(1, 0);
-            // lookupTable.setSaturationRange(0.5,1);
-            // lookupTable.setValueRange(0.5, 1);
-            let map = vtkMapper.newInstance({
-                useLookupTableScalarRange: true,
-                lookupTable,
-            });
-            let act = vtkActor.newInstance();
-            map.setInputData(model.data);
-            act.setMapper(map);
-            model.actor = act;
-            model.mapper = map;
-            model.renderer.addActor(act);
-            model.interactorStyle.setCenterOfRotation(map.getCenter());
-            reassignManipulators(model);
             model.renderer.resetCamera();
             model.renderWindow.render();
-
             // theCanvas.
-            // const reader = vtkElevationReader.newInstance({
-            //     xSpacing: 0.01568,
-            //     ySpacing: 0.01568,
-            //     zScaling: 0.06666,
-            // });
-            // reader.setUrl(`/data/dicom/${file}.csv`).then(() => {
-            //     let mapData = reader.getOutputData().getState().points.values;
-            //     axios.post(goUrl + "/csvData", {
-            //         dataType: ".csv",
-            //         POINTS: mapData,
-            //         fileName: name
-            //     })
-            // });
+            const reader = vtkElevationReader.newInstance({
+                xSpacing: 0.01568,
+                ySpacing: 0.01568,
+                zScaling: 0.06666,
+            });
+            reader.setUrl(`/data/dicom/${file}.csv`).then(() => {
+                let mapData = reader.getOutputData().getState().points.values;
+                axios.post(goUrl + "/csvData", {
+                    dataType: ".csv",
+                    POINTS: mapData,
+                    fileName: name
+                })
+            });
 
         }
     };
@@ -568,7 +331,7 @@ export default class csvView extends Component {
     }
 
     render() {
-        let { boxBgColor, displayBox, model, xLength, yLength, zLength } = this.state;
+        let { boxBgColor, displayBox, model } = this.state;
         let { display, keydown, useScreen, show, opt } = this.props;
         displayBox = display
         if (keydown === "R") {//回到中心
@@ -578,22 +341,6 @@ export default class csvView extends Component {
             }
         } else {
         };
-        // if (model.fullScreenRenderer) {
-        //     const fn = () => {
-        //         let polydata = JSON.parse(JSON.stringify(model.actor.getMapper().getInputData().getState()));
-        //         let data = vtk(polydata);
-        //         vtkMatrixBuilder
-        //             .buildFromDegree()
-        //             .rotateY(10)
-        //             .apply(data.getPoints().getData());
-        //         window.requestAnimationFrame(fn);
-        //         model.mapper.setInputData(data);
-        //         model.renderer.removeActor(model.actor);
-        //         model.actor.setMapper(model.mapper)
-        //         model.renderer.addActor(model.actor);
-        //     }
-        //     window.requestAnimationFrame(fn);
-        // }
 
         displayBox = display;
         if (useScreen !== null) {
@@ -601,7 +348,6 @@ export default class csvView extends Component {
             this.timer = setTimeout(() => {
             }, 1000);
         }
-
 
         //改变鼠标事件
         changeManipulators(model, opt);
@@ -710,7 +456,7 @@ export default class csvView extends Component {
                     </div>
                 </Draggable>
                 <div className="vtk-container" style={{ "height": show, "minHeight": "100px", "minWidth": "100px" }} ref={this.container}></div>
-            </div >
+            </div>
         )
     }
 }

@@ -18,6 +18,7 @@ import OffView from "./vtkView/view/offView";
 import ObjView from "./vtkView/view/objView";
 import InpView from "./vtkView/view/inpView";
 import ImageView from "./vtkView/view/imageView";
+import JsonView from "./vtkView/view/jsonView";
 import FlaviaView from "./vtkView/view/flaviaMshView";
 import PostMshView from "./vtkView/view/postMshView";
 import { readJson } from "./vtkView/common/index"
@@ -77,6 +78,9 @@ export default class Vtk extends React.Component {
                 });
             }
         } else if (this.props.match.params.id) {
+            if (this.props.match.params.id.split('.')[1] === "json") {
+                readJson("/dicom/" + this.props.match.params.id, _this, this.props.match.params.id, '.json');
+            }
             let id = { "fileName": this.props.match.params.id };
             axios.post(goUrl + '/process/proUpTwo', id).then(function (response) {
                 if (response.data.data) {
@@ -273,14 +277,15 @@ export default class Vtk extends React.Component {
                         <Col className="visual-view views">
                             {
                                 data.type === ".csv" ? (< CsvView data={data} display={display} useScreen={Screen} useAxis={useAxis} opt={opt} fileName={fileName} show={show} keydown={keydown} />) :
-                                    data.type === ".vtk" ? (< VtkView data={data} Scalar={Scalar} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
-                                        data.type === ".msh" ? (< MshView data={data} Scalar={Scalar} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
-                                            data.type === ".flavia.msh" ? (< FlaviaView data={data} Scalar={Scalar} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
-                                                data.type === ".post.msh" ? (< PostMshView data={data} Scalar={Scalar} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
-                                                    data.type === '.vti' ? (<ImageView filename={fileName} useScreen={Screen} display={display} />) :
-                                                        data.type === ".off" ? (< OffView data={data} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
-                                                            data.type === ".obj" ? (< ObjView data={data} filename={fileName} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
-                                                                data.type === ".inp" ? (< InpView data={data} filename={fileName} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} Scalar={Scalar} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) : null
+                                    data.type === ".json" ? (< JsonView data={data} Scalar={Scalar} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} />) :
+                                        data.type === ".vtk" ? (< VtkView data={data} Scalar={Scalar} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
+                                            data.type === ".msh" ? (< MshView data={data} Scalar={Scalar} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
+                                                data.type === ".flavia.msh" ? (< FlaviaView data={data} Scalar={Scalar} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
+                                                    data.type === ".post.msh" ? (< PostMshView data={data} Scalar={Scalar} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
+                                                        data.type === '.vti' ? (<ImageView filename={fileName} useScreen={Screen} display={display} />) :
+                                                            data.type === ".off" ? (< OffView data={data} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
+                                                                data.type === ".obj" ? (< ObjView data={data} filename={fileName} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
+                                                                    data.type === ".inp" ? (< InpView data={data} filename={fileName} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} Scalar={Scalar} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) : null
                             } </Col>
                     </Content>
                 </Layout>
