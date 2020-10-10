@@ -65,7 +65,7 @@ export default class vtkView extends Component {
             let OpenGlRW = model.fullScreenRenderer.getOpenGLRenderWindow();
             let points = JSON.parse(JSON.stringify(data.data.POINTS));
             let cells = JSON.parse(JSON.stringify(data.data.CELLS));
-            let cellData = Object.keys(data.data.CELLDATA).length !== 0 ? JSON.parse(JSON.stringify(data.data.CELLDATA)) : {};
+            let cellData = {};
             let vectors = []
             if (Object.getOwnPropertyNames(data.data.VECTORS).length > 0) {
                 vectors = JSON.parse(JSON.stringify(data.data.VECTORS));
@@ -88,6 +88,14 @@ export default class vtkView extends Component {
                         cellDataName.push(key)
                     }
                 }
+            }else{
+                cellData = JSON.parse(JSON.stringify(data.data.CELLDATA));
+                cellDataName = [];
+                for (let key in cellData) {
+                    if (cellData.hasOwnProperty(key)) {
+                        cellDataName.push(key)
+                    }
+                }
             }
             //矢量数据
             let vectordataName = [];
@@ -101,7 +109,7 @@ export default class vtkView extends Component {
                 vectorData = vectors[vectordataName[0]];
             }
             let pointData = "", unique = [], min = 0, max = 1;
-            if (Object.keys(data.data.CELLDATA).length !== 0) {
+            if (Object.keys(cellData).length !== 0) {
                 pointData = JSON.parse(JSON.stringify(cellData[cellDataName[0]]));
                 unique = [...new Set(pointData)];
                 if (unique[0] === "null") unique.splice(0, 1);
@@ -289,7 +297,7 @@ export default class vtkView extends Component {
                 values: cells,
             },
         };
-        if (Object.keys(data.data.CELLDATA).length === 0) Scalar = false;
+        // console.log(Object.keys(data.data.CELLDATA).length);
         //是否显示结果
         if (document.querySelector('.textCanvas')) this.container.current.children[0].removeChild(document.querySelector('.textCanvas'))
         let modes = mode;
@@ -309,6 +317,8 @@ export default class vtkView extends Component {
         lut1.updateRange();
         if (OpenGlRW.initialize) gl(OpenGlRW);
         if (model.fullScreenRenderer) {
+            if (Object.keys(data.data.CELLDATA).length === 0) Scalar = false;
+            console.log(Scalar)
             model.renderer.removeActor(model.bounds);
             if (data.data.CELLDATA === null || Object.keys(data.data.CELLDATA).length === 0) {
                 if (Object.keys(cellData).length > 0) {
@@ -355,32 +365,62 @@ export default class vtkView extends Component {
                     };
                 }
             } else {
-                polydata1 = {
-                    vtkClass: 'vtkPolyData',
-                    points: {
-                        vtkClass: 'vtkPoints',
-                        dataType: 'Float32Array',
-                        numberOfComponents: 3,
-                        values: points,
-                    },
-                    polys: {
-                        vtkClass: 'vtkCellArray',
-                        dataType: "Float32Array",
-                        values: cells,
-                    },
-                    cellData: {
-                        vtkClass: 'vtkDataSetAttributes',
-                        activeScalars: 0,
-                        arrays: [{
-                            data: {
-                                vtkClass: 'vtkDataArray',
-                                name: 'pointScalars',
-                                dataType: 'Float32Array',
-                                values: cellData[cellDataName[0]],
-                            },
-                        }],
-                    }
-                };
+                if (cellData[cellDataName[0]].length === points.length / 3) {
+                    polydata1 = {
+                        vtkClass: 'vtkPolyData',
+                        points: {
+                            vtkClass: 'vtkPoints',
+                            dataType: 'Float32Array',
+                            numberOfComponents: 3,
+                            values: points,
+                        },
+                        polys: {
+                            vtkClass: 'vtkCellArray',
+                            dataType: "Float32Array",
+                            values: cells,
+                        },
+                        pointData: {
+                            vtkClass: 'vtkDataSetAttributes',
+                            activeScalars: 0,
+                            arrays: [{
+                                data: {
+                                    vtkClass: 'vtkDataArray',
+                                    name: 'pointScalars',
+                                    dataType: 'Float32Array',
+                                    values: cellData[cellDataName[0]],
+                                },
+                            }],
+                        }
+                    };
+                } else {
+                    polydata1 = {
+                        vtkClass: 'vtkPolyData',
+                        points: {
+                            vtkClass: 'vtkPoints',
+                            dataType: 'Float32Array',
+                            numberOfComponents: 3,
+                            values: points,
+                        },
+                        polys: {
+                            vtkClass: 'vtkCellArray',
+                            dataType: "Float32Array",
+                            values: cells,
+                        },
+                        cellData: {
+                            vtkClass: 'vtkDataSetAttributes',
+                            activeScalars: 0,
+                            arrays: [{
+                                data: {
+                                    vtkClass: 'vtkDataArray',
+                                    name: 'pointScalars',
+                                    dataType: 'Float32Array',
+                                    values: cellData[cellDataName[0]],
+                                },
+                            }],
+                        }
+                    };
+                }
+
             }
             model.renderer.removeActor(model.bounds);
             showBounds(bounds, model, this.container, vtk(polydata1));
@@ -411,17 +451,26 @@ export default class vtkView extends Component {
             model.mapper = mapper1;
             model.renderer.addActor(actor1);
         }
-        if (Scalar === false) {
-            displayBar = 0;
-            if (model.renderWindow) model.mapper.setScalarModeToUsePointData();
-        } else {
-            if (model.renderWindow) model.mapper.setScalarModeToUseCellData();
+        if (Object.keys(data.data.CELLDATA).length !== 0){
+            if (Scalar === false) {
+                displayBar = 0;
+                if (model.renderWindow) model.mapper.setScalarModeToUseCellData();
+            } else {
+                if (model.renderWindow) model.mapper.setScalarModeToUsePointData();
+            }
+        }else{
+            if (Scalar === false) {
+                displayBar = 0;
+                if (model.renderWindow) model.mapper.setScalarModeToUsePointData();
+            } else {
+                if (model.renderWindow) model.mapper.setScalarModeToUseCellData();
+            }
         }
+        
 
         displayBox = display;
-
         //改变显示样式
-        if (model.renderer||Object.keys(cellData).length > 0) changeManipulators(model, opt, keydown, useLight, useAxis, unique, modes, this.container1, lut1, inputValue, polydata1, polydata2, min, max, Scalar);
+        if (model.renderer || Object.keys(cellData).length > 0) changeManipulators(model, opt, keydown, useLight, useAxis, unique, modes, this.container1, lut1, inputValue, polydata1, polydata2, min, max, Scalar);
 
         //截屏
         if (useScreen !== null) {

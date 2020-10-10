@@ -542,6 +542,7 @@ export const changeManipulators = (model, opt, keydown, useLight, useAxis, scala
         }
     };
     reassignManipulators(model);
+    // model.renderWindow.render();
 }
 
 //显示边框

@@ -153,6 +153,13 @@ export default class csvView extends Component {
             vtkBox.innerHTML = null;
         }
         if (data.type === ".csv") {
+            // let oldData = data.data;
+            // // let reData = [];
+            // for (let x = 0; x < oldData.length; x++) {
+            //     oldData[x].length = 96;
+            // }
+            // console.log(oldData)
+
             let yLength = data.data.length;
             let xLength = data.data[0].length;
             let zLength = yLength;
@@ -160,50 +167,18 @@ export default class csvView extends Component {
             let arr = data.data;
             let array = [];
             for (let i = 0; i < arr.length - 1; i++) {
-                let arr1 = [], arr2 = [], arr3 = [], arr4 = [], arr5 = [], arr6 = [], arr7 = [], arr8 = [], arr9 = [];
                 array.push(arr[i])
-                for (let j = 0; j < arr[0].length; j++) {
-                    arr1[j] = Number(arr[i][j]) + (Number(arr[i + 1][j]) - Number(arr[i][j])) * 0.1;
-                    arr2[j] = Number(arr[i][j]) + (Number(arr[i + 1][j]) - Number(arr[i][j])) * 0.2;
-                    arr3[j] = Number(arr[i][j]) + (Number(arr[i + 1][j]) - Number(arr[i][j])) * 0.3;
-                    arr4[j] = Number(arr[i][j]) + (Number(arr[i + 1][j]) - Number(arr[i][j])) * 0.4;
-                    arr5[j] = Number(arr[i][j]) + (Number(arr[i + 1][j]) - Number(arr[i][j])) * 0.5;
-                    arr6[j] = Number(arr[i][j]) + (Number(arr[i + 1][j]) - Number(arr[i][j])) * 0.6;
-                    arr7[j] = Number(arr[i][j]) + (Number(arr[i + 1][j]) - Number(arr[i][j])) * 0.7;
-                    arr8[j] = Number(arr[i][j]) + (Number(arr[i + 1][j]) - Number(arr[i][j])) * 0.8;
-                    arr9[j] = Number(arr[i][j]) + (Number(arr[i + 1][j]) - Number(arr[i][j])) * 0.9;
-                }
-                array.push(arr1, arr2, arr3, arr4, arr5, arr6, arr7, arr8, arr9)
             }
             array.push(arr[arr.length - 1]);
-            for (let i = 0; i < array.length; i++) {
-                let xRes = [];
-                for (let j = 0; j < array[i].length - 1; j++) {
-                    let num = Number(array[i][j + 1]) - Number(array[i][j])
-                    xRes.push(array[i][j], Number(array[i][j]) + num * 0.1,
-                    Number(array[i][j]) + num * 0.2,
-                    Number(array[i][j]) + num * 0.3,
-                    Number(array[i][j]) + num * 0.4,
-                    Number(array[i][j]) + num * 0.5,
-                    Number(array[i][j]) + num * 0.6,
-                    Number(array[i][j]) + num * 0.7,
-                    Number(array[i][j]) + num * 0.8,
-                    Number(array[i][j]) + num * 0.9,)
-                }
-                xRes.push(Number(array[i][array[i].length - 1]));
-                array[i]=xRes;
-            }
             yLength = array.length;
             xLength = array[0].length;
-            console.log(array);
-            console.log(xLength,yLength);
             this.setState({
                 xLength: xLength,
                 yLength: yLength,
                 zLength: zLength,
             })
             Rendering(model, this.container);
-            
+
             const lookupTable = vtkLookupTable.newInstance({
             });
             // 定义查找表
@@ -216,7 +191,7 @@ export default class csvView extends Component {
             });
             // 定义平面源
             const planeSource = vtkPlaneSource.newInstance({
-                XResolution: xLength * 2 - 1,
+                XResolution: xLength - 1,
                 YResolution: yLength - 1,
             });
 
@@ -344,7 +319,7 @@ export default class csvView extends Component {
                     numberOfComponents: 3,
                     values: topPoint,
                 },
-                lines: {
+                polys: {
                     vtkClass: 'vtkCellArray',
                     dataType: 'Float32Array',
                     values: topCell,
@@ -371,7 +346,7 @@ export default class csvView extends Component {
                     numberOfComponents: 3,
                     values: leftPoint,
                 },
-                lines: {
+                polys: {
                     vtkClass: 'vtkCellArray',
                     dataType: 'Float32Array',
                     values: leftCell,
@@ -397,7 +372,7 @@ export default class csvView extends Component {
                     numberOfComponents: 3,
                     values: rightPoint,
                 },
-                lines: {
+                polys: {
                     vtkClass: 'vtkCellArray',
                     dataType: 'Float32Array',
                     values: rightCell,

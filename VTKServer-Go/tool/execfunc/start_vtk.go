@@ -153,13 +153,13 @@ func HandleVTK(filePath string) (ObjData, error) {
 							pointDataObj := strings.Replace(strings.Replace(strings.Split(lineNew, "\n")[0], "\r", "", -1), " ", "", -1)
 							cellKey := info.scalarIden[0]
 							objdata.CELLDATA[cellKey] = append(objdata.CELLDATA[cellKey], pointDataObj)
-							objdata.POINTDATA = nil
+							// objdata.POINTDATA = nil
 						}
 					}
 				}
 				if len(info.scalars) >= 2 {
 					if count > info.scalars[0]+1 && count < info.scalars[1]-1 {
-						objdata.CELLDATA = nil
+						// objdata.CELLDATA = nil
 					}
 					if i >= 1 && i < len(info.scalars)-1 {
 						if count > info.scalars[i]+1 && count < info.scalars[i+1] {
