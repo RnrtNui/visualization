@@ -124,7 +124,7 @@ func HandleVTK(filePath string) (ObjData, error) {
 						}
 					}
 					if len(strArr) > 0 {
-						if strArr[0] == "3" || strArr[0] == "4" {
+						if strArr[0] == "1" || strArr[0] == "2" || strArr[0] == "3" || strArr[0] == "4" {
 							for i := 0; i < len(strArr); i++ {
 								if strArr[i] != "" {
 									objdata.CELLS = append(objdata.CELLS, strArr[i])

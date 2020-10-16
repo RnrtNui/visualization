@@ -88,7 +88,7 @@ export default class vtkView extends Component {
                         cellDataName.push(key)
                     }
                 }
-            }else{
+            } else {
                 cellData = JSON.parse(JSON.stringify(data.data.CELLDATA));
                 cellDataName = [];
                 for (let key in cellData) {
@@ -318,7 +318,6 @@ export default class vtkView extends Component {
         if (OpenGlRW.initialize) gl(OpenGlRW);
         if (model.fullScreenRenderer) {
             if (Object.keys(data.data.CELLDATA).length === 0) Scalar = false;
-            console.log(Scalar)
             model.renderer.removeActor(model.bounds);
             if (data.data.CELLDATA === null || Object.keys(data.data.CELLDATA).length === 0) {
                 if (Object.keys(cellData).length > 0) {
@@ -449,22 +448,23 @@ export default class vtkView extends Component {
             model.renderer.removeActor(model.actor);
             model.actor = actor1
             model.mapper = mapper1;
+            if (Object.keys(data.data.CELLDATA).length !== 0) {
+                console.log(Scalar)
+                if (Scalar === false) {
+                    displayBar = 0;
+                    if (model.renderWindow) model.mapper.setScalarModeToUsePointData();
+                } else {
+                    if (model.renderWindow) model.mapper.setScalarModeToUseCellData();
+                }
+            } else {
+                if (Scalar === false) {
+                    displayBar = 0;
+                    if (model.renderWindow) model.mapper.setScalarModeToUsePointData();
+                } else {
+                    if (model.renderWindow) model.mapper.setScalarModeToUseCellData();
+                }
+            }
             model.renderer.addActor(actor1);
-        }
-        if (Object.keys(data.data.CELLDATA).length !== 0){
-            if (Scalar === false) {
-                displayBar = 0;
-                if (model.renderWindow) model.mapper.setScalarModeToUseCellData();
-            } else {
-                if (model.renderWindow) model.mapper.setScalarModeToUsePointData();
-            }
-        }else{
-            if (Scalar === false) {
-                displayBar = 0;
-                if (model.renderWindow) model.mapper.setScalarModeToUsePointData();
-            } else {
-                if (model.renderWindow) model.mapper.setScalarModeToUseCellData();
-            }
         }
         
 

@@ -23,7 +23,6 @@ import { FieldDataTypes } from 'vtk.js/Sources/Common/DataModel/DataSet/Constant
 import { AttributeTypes } from 'vtk.js/Sources/Common/DataModel/DataSetAttributes/Constants';
 import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps';
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
-import colorMode from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps.json'
 import { Rendering, Screen, reassignManipulators, changeManipulators } from "../common/index"
 const InputGroup = Input.Group;
 
@@ -450,15 +449,24 @@ export default class csvView extends Component {
             let min = Number(unique[0]);
             let max = Number(unique[unique.length - 1]);
             lookupTable.setMappingRange(min, max);
-            // lookupTable.setHueRange(1, 0);
-            // lookupTable.setSaturationRange(0.5,1);
-            // lookupTable.setValueRange(0.5, 1);
+            lookupTable.setHueRange(-1, 1);
+            lookupTable.setSaturationRange(0, 0);
+            lookupTable.setValueRange(-1,0.5);
             let map = vtkMapper.newInstance({
                 useLookupTableScalarRange: true,
                 lookupTable,
             });
+            ///////////////////////////////////////////////////////////////////////////////////////////////////
+            // const lut1 = vtkColorTransferFunction.newInstance();
+            // //预设色标颜色样式
+            // const preset = vtkColorMaps.getPresetByName("X Ray");
+            // //应用ColorMap
+            // lut1.applyColorMap(preset);
+            // lut1.updateRange();
+            //////////////////////////////////////////////////////////////////////////////////////////////////////
             let act = vtkActor.newInstance();
             map.setInputData(model.data);
+            // map.setLookupTable(lut1);
             act.setMapper(map);
             model.actor = act;
             model.mapper = map;
@@ -553,22 +561,34 @@ export default class csvView extends Component {
             }
         } else {
         };
+        //model自动旋转///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // if (model.fullScreenRenderer) {
+        //     const camera = model.renderer.getActiveCamera();
+        //     console.log(camera.getClippingRange())
+        //     camera.setClippingRange(0.1,600);
         //     const fn = () => {
-        //         let polydata = JSON.parse(JSON.stringify(model.actor.getMapper().getInputData().getState()));
-        //         let data = vtk(polydata);
+        //         let cameraPosition = camera.getPosition();
+                
+        //         // let cameraFocalPoint = camera.getFocalPoint();
+        //         console.log(camera);
+        //         // let polydata = JSON.parse(JSON.stringify(model.actor.getMapper().getInputData().getState()));
+        //         // let data = vtk(polydata);
         //         vtkMatrixBuilder
         //             .buildFromDegree()
-        //             .rotateY(10)
-        //             .apply(data.getPoints().getData());
+        //             .rotateY(1)
+        //             .apply(cameraPosition);
+        //         // console.log(cameraPosition);
+        //         camera.setPosition(...cameraPosition);
+        //         model.renderWindow.render();
         //         window.requestAnimationFrame(fn);
-        //         model.mapper.setInputData(data);
-        //         model.renderer.removeActor(model.actor);
-        //         model.actor.setMapper(model.mapper)
-        //         model.renderer.addActor(model.actor);
+        //         // model.mapper.setInputData(data);
+        //         // model.renderer.removeActor(model.actor);
+        //         // model.actor.setMapper(model.mapper)
+        //         // model.renderer.addActor(model.actor);
         //     }
         //     window.requestAnimationFrame(fn);
         // }
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         displayBox = display;
         if (useScreen !== null) {

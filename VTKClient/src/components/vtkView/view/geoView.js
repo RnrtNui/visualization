@@ -9,6 +9,7 @@ import { goUrl } from '../../../url';
 import { Input, Button } from "antd";
 import vtk from 'vtk.js/Sources/vtk';
 import Draggable from 'react-draggable';
+import triangulate from 'delaunay-triangulate';
 import React, { Component } from 'react';
 import vtkActor from 'vtk.js/Sources/Rendering/Core/Actor';
 import vtkMapper from 'vtk.js/Sources/Rendering/Core/Mapper';
@@ -19,6 +20,7 @@ import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/Co
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
 import vtkFullScreenRenderWindow from 'vtk.js/Sources/Rendering/Misc/FullScreenRenderWindow';
 import { randomPoint } from '@turf/random';
+import triangleGrid from '@turf/triangle-grid';
 import { point } from '@turf/helpers';
 import tin from '@turf/tin';
 import vtkWindowedSincPolyDataFilter from 'vtk.js/Sources/Filters/General/WindowedSincPolyDataFilter';
@@ -72,8 +74,13 @@ export default class Geo extends Component {
             z6 = [8.00, 2.61, 2.11, 1.15, 1.53, 1.60, 1.50, 1.95, .79, 4.00, 2.46, 1.92, 1.38];    //13    31m
         //创建场景
         let bounds = [Math.min(...x), Math.min(...y), 0, Math.max(...x), Math.max(...y), 350];
-        var pt = randomPoint(5000, { bbox: [Math.min(...x), Math.min(...y), Math.max(...x), Math.max(...y)] });
-        console.log(pt)
+        var bbox = [Math.min(...x), Math.min(...y), Math.max(...x), Math.max(...y)];
+        var pt = randomPoint(5000, { bbox });
+        var cellSide = 100;
+        var options = { units: 'miles' };
+        console.log(pt);
+        var triangleGrid1 = triangleGrid(bbox, cellSide, options);
+        console.log(triangleGrid1)
         //场景数据
         let polydata = vtk({
             vtkClass: 'vtkPolyData',
@@ -260,7 +267,7 @@ export default class Geo extends Component {
             const preset = vtkColorMaps.getPresetByName("rainbow");   //预设色标颜色样式
             lut.applyColorMap(preset);  //应用ColorMap
             lut.updateRange();
-            mapper1.setLookupTable(lut)
+            mapper1.setLookupTable(lut);
             actor.setMapper(mapper1);
             model.renderer.addActor(actor);
             return { cylinderSource, mapper, actor };
@@ -269,16 +276,18 @@ export default class Geo extends Component {
         let cell = [[3, 1, 4], [5, 3, 4], [2, 3, 5], [0, 2, 5]];
 
         for (var i = 0; i < pt.features.length; i++) {
-            pt.features[i].geometry.coordinates.push(100);
+            pt.features[i].geometry.coordinates.push(Math.random() * 50);
             pt.features[i].properties.index = i;
         }
         var tins = tin(pt);
-        let triangle = tins.features;
+        let triangle = triangleGrid1.features;
+        console.log(triangle);
+
         let tp = [], tc = [], td = [];
         for (let i = 0; i < triangle.length; i++) {
-            tp = tp.concat(triangle[i].geometry.coordinates[0][0], triangle[i].geometry.coordinates[0][1], triangle[i].geometry.coordinates[0][2]);
+            tp = tp.concat(triangle[i].geometry.coordinates[0][0],[1], triangle[i].geometry.coordinates[0][1],[1], triangle[i].geometry.coordinates[0][2],[1]);
             tc.push(3, i * 3, i * 3 + 1, i * 3 + 2);
-            td.push(triangle[i].geometry.coordinates[0][0][2], triangle[i].geometry.coordinates[0][1][2], triangle[i].geometry.coordinates[0][2][2])
+            td.push(triangle[i].geometry.coordinates[0][0][2], triangle[i].geometry.coordinates[0][1][2], triangle[i].geometry.coordinates[0][2][2]);
         }
         // console.log(tp)
         const polys = vtk({
@@ -293,7 +302,7 @@ export default class Geo extends Component {
                 vtkClass: 'vtkCellArray',
                 dataType: "Float32Array",
                 values: tc,
-            }, 
+            },
             // pointData: {
             //     vtkClass: 'vtkDataSetAttributes',
             //     activeScalars: 0,
@@ -417,7 +426,7 @@ export default class Geo extends Component {
             nonManifoldSmoothing: 0,
             numberOfIterations: 10,
         });
-        
+
         smoothFilter.setInputData(polys);
         model.smoothFilter = smoothFilter;
         const mapper3 = vtkMapper.newInstance();
@@ -462,7 +471,7 @@ export default class Geo extends Component {
         };
     }
     componentDidMount() {
-        let {model} = this.state;
+        let { model } = this.state;
         // [
         //     'numberOfIterations',
         //     'passBand',
