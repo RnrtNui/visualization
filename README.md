@@ -5,11 +5,11 @@
     
 ##概述：
     visualization可视化项目下包含数据可视化（DataVClient），模型可视化（VTKClient），nodeJs服务（VTKServer，DataVServer）和web终端（webssh2）:
-    VTKClient（模型可视化）基于vtk.js实现的前端可视化项目，支持多种模型数据文件格式，进行数据模型及结果进行渲染;
+    VTKClient （模型可视化）基于vtk.js实现的前端可视化项目，支持多种模型数据文件格式，进行数据模型及结果进行渲染;
     DataVClient （数据可视化）采用百度echarts、百度地图API等实现各种二维和三维图表、词云图、热力图等,实现数据可视化;
-    VTKServer 流程化部分nodeJs后端接口服务代码;
-    DataVServer 数据可视化部分nodeJs后端服务代码;
-    webssh2 (web终端) 在浏览器上运行的SSH终端服务代码。
+    VTKServer  流程化部分nodeJs后端接口服务代码;
+    DataVServer  数据可视化部分nodeJs后端服务代码;
+    webssh2 （web终端）在浏览器上运行的SSH终端服务代码。
 
 ##运行环境：
     node:v13.12.0
