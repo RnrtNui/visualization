@@ -370,8 +370,8 @@ app.post('/assignPath', function (req, res) {
     req.on('end', function () {
         postData = JSON.parse(decodeURI(postData));
         let timeStamp = postData["timeStamp"];
+        let data = {};
         if (timeStamp in Obj) {
-            let data = {};
             data[timeStamp] = 1;
             io.emit('assignPath', data);
             Obj[timeStamp] = Object.assign(Obj[timeStamp], postData.params);
@@ -408,8 +408,8 @@ app.post('/taskScripts', function (req, res) {
         //对url进行解码（url会对中文进行编码）
         postData = JSON.parse(decodeURI(postData));
         let timeStamp = postData["timeStamp"];
+        let data = {};
         if (timeStamp in Obj) {
-            let data = {};
             data[timeStamp] = 1;
             io.emit('taskScripts', data);
             Obj[timeStamp] = Object.assign(Obj[timeStamp], postData.params);
@@ -464,8 +464,8 @@ app.post('/runTaskScripts', function (req, res) {
         //对url进行解码（url会对中文进行编码）
         postData = JSON.parse(decodeURI(postData));
         let timeStamp = postData["timeStamp"];
+        let data = {};
         if (timeStamp in Obj) {
-            let data = {};
             data[timeStamp] = 1;
             io.emit('runTaskScripts', data);
             cmd.get(
@@ -517,8 +517,8 @@ app.post('/pullData', function (req, res) {
     req.on('end', function () {
         postData = JSON.parse(decodeURI(postData));
         let timeStamp = postData["timeStamp"];
+        let data = {};
         if (timeStamp in Obj) {
-            let data = {};
             data[timeStamp] = 1;
             io.emit('pullData', data);
             Obj[timeStamp] = Object.assign(Obj[timeStamp], postData.params);
@@ -575,9 +575,8 @@ app.post('/getFileName', function (req, res) {
     req.on('end', function () {
         postData = JSON.parse(decodeURI(postData));
         let timeStamp = postData["timeStamp"];
+        let data = {};
         if (timeStamp in Obj) {
-
-            let data = {};
             data[timeStamp] = 1;
             io.emit('pullgetFileNameData', data);
             let command = `sshpass -p "${Obj[timeStamp].password}" ssh -o "StrictHostKeyChecking=no" ${Obj[timeStamp].username}@${Obj[timeStamp].ip} ls ${Obj[timeStamp].dirPath}/*.msh`;
