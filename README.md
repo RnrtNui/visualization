@@ -1,12 +1,15 @@
-#前端部分：
+#前端+node服务部分：
 
 ##作者：
     鲁杨飞
     
 ##概述：
-    visualization可视化项目下包含数据可视化（DataVClient），模型可视化（VTKClient）:
+    visualization可视化项目下包含数据可视化（DataVClient），模型可视化（VTKClient），node服务（VTKServer，DataVServer）和web终端（webssh2）:
     VTKClient（模型可视化）基于vtk.js实现的前端可视化项目，支持多种模型数据文件格式，进行数据模型及结果进行渲染;
-    DataVClient （数据可视化）采用百度echarts、百度地图API等实现各种二维和三维图表、词云图、热力图等,实现数据可视化。
+    DataVClient （数据可视化）采用百度echarts、百度地图API等实现各种二维和三维图表、词云图、热力图等,实现数据可视化;
+    VTKServer 流程化部分node后端接口服务代码;
+    DataVServer 数据可视化部分node后端服务代码;
+    webssh2 (web终端) 在浏览器上运行的SSH终端服务代码。
 
 ##运行环境：
     node:v13.12.0
@@ -29,7 +32,25 @@
     4、npm run build 构建项目；
     5、通过 npm start 启动项目。
 
-##后端配合名称：
+###webssh2（web终端）:
+    注意：每次更新package.json需要执行npm install更新依赖包。
+    1、进入webssh2目录下打开控制台通过  npm install 安装依赖包;
+    2、修改webssh2/client/src/目录下的client.htm中的两处"http://192.168.2.134:8004"改为本机ip地址+端口号;
+    3、npm run builddev 构建项目;
+    4、通过 npm start 启动项目;
+    5、浏览器访问http:// + 本机ip + :端口 + /ssh/host/ + 访问的终端ip + / + 用户名 + / + 密码。
+    (例如:http://192.168.2.134:8004/ssh/host/192.168.2.134/luyangfei/123456)
+
+###VTKServer:
+    注意：每次更新package.json需要执行npm install更新依赖包。
+    1、进入VTKServer目录下打开控制台通过  npm install 安装依赖包;
+    2、通过 npm start 启动服务。
+
+###DataVServer:
+    注意：每次更新package.json需要执行npm install更新依赖包。
+    1、进入DataVServer目录下打开控制台通过  npm install 安装依赖包;
+    2、通过 npm start 启动服务。
+##VTKClient后端配合名称：
     VTKServer-Go
 
 #后端部分：
