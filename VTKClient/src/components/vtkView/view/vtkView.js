@@ -13,6 +13,7 @@ import vtkMapper from 'vtk.js/Sources/Rendering/Core/Mapper';
 import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps';
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
 import colorMode from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps.json';
+import vtkSphereSource from 'vtk.js/Sources/Filters/Sources/SphereSource';
 import { Rendering, Screen, gl, scalarBar, Axis, reassignManipulators, changeManipulators, showBounds, showVector } from "../common/index";
 
 const InputGroup = Input.Group;
@@ -26,6 +27,7 @@ export default class vtkView extends Component {
             activeScalar: [],
             model: {},
             canvas: {},
+            pointsAct: [],
             useScalar: false,
             boxBgColor: "#ccc",
             value: 0,
@@ -55,7 +57,7 @@ export default class vtkView extends Component {
         let { data } = this.props;
         let { model } = this.state;
         let vtkBox = document.getElementsByClassName('vtk-container')[0];
-        console.log(data)
+        console.log(data);
         if (vtkBox) {
             vtkBox.innerHTML = null;
         }
@@ -65,6 +67,13 @@ export default class vtkView extends Component {
             let OpenGlRW = model.fullScreenRenderer.getOpenGLRenderWindow();
             let points = JSON.parse(JSON.stringify(data.data.POINTS));
             let cells = JSON.parse(JSON.stringify(data.data.CELLS));
+            // let cellsCopy = [];
+            // for (let i = 0; i < cells.length; i++) {
+            //     if (cells[i] === "1") cellsCopy.push([cells[i], cells[i + 1]]);
+            //     if (cells[i] === "2") cellsCopy.push([cells[i], cells[i + 1], cells[i + 2]]);
+            //     if (cells[i] === "4") cellsCopy.push([cells[i], cells[i + 1], cells[i + 2], cells[i + 3], cells[i + 4]]);
+            //     i = i + Number(cells[i]);
+            // }
             let cellData = {};
             let vectors = []
             if (Object.getOwnPropertyNames(data.data.VECTORS).length > 0) {
@@ -108,6 +117,22 @@ export default class vtkView extends Component {
                 }
                 vectorData = vectors[vectordataName[0]];
             }
+            ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            // let cellsCopys = [], cellDataCopy = [], pointsAct = [], linesAct = [];
+            // for (let i = 0; i < cellsCopy.length; i++) {
+            //     if (cellsCopy[i][0] === '4') {
+            //         let arr1 = cellsCopy[i];
+            //         cellsCopys.push(3, arr1[1], arr1[2], arr1[3], 3, arr1[4], arr1[2], arr1[3], 3, arr1[1], arr1[2], arr1[4], 3, arr1[1], arr1[4], arr1[3]);
+            //         cellDataCopy.push(cellData[cellDataName[0]][i], cellData[cellDataName[0]][i], cellData[cellDataName[0]][i], cellData[cellDataName[0]][i]);
+            //     } else if (cellsCopy[i][0] === '1') {
+            //         pointsAct.push([points[Number(cellsCopy[i][1]) * 3], points[Number(cellsCopy[i][1]) * 3 + 1], points[Number(cellsCopy[i][1]) * 3 + 2]]);
+            //     } else {
+
+            //     }
+            // }
+            // cellData[cellDataName[0]] = cellDataCopy;
+            // cells = cellsCopys;
+            //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             let pointData = "", unique = [], min = 0, max = 1;
             if (Object.keys(cellData).length !== 0) {
                 pointData = JSON.parse(JSON.stringify(cellData[cellDataName[0]]));
@@ -122,10 +147,11 @@ export default class vtkView extends Component {
             this.setState({
                 points: points,
                 cells: cells,
+                // pointsAct, pointsAct,
                 pointData: cellDataName[0],
                 min: min,
                 max: max,
-                unique: unique,
+                unique: unique.slice(),
                 cellData: cellData,
                 cellDataName: cellDataName,
                 vectorData: vectorData,
@@ -145,7 +171,6 @@ export default class vtkView extends Component {
                     values: cells,
                 },
             });
-
             const mapper = vtkMapper.newInstance({
                 interpolateScalarsBeforeMapping: true
             });
@@ -259,7 +284,6 @@ export default class vtkView extends Component {
             unique: unique,
             min: min,
             max: max
-
         })
     }
 
@@ -278,7 +302,7 @@ export default class vtkView extends Component {
 
     render() {
         let {
-            boxBgColor, displayBox, points, cells, vector, ArrowSize, vectorData, model, activeScalar, mode, unique, inputValue, min, max, cellData, cellDataName, OpenGlRW
+            boxBgColor, displayBox, points, cells, vector, ArrowSize, vectorData, model, activeScalar, mode, unique, inputValue, min, max, cellData, cellDataName, OpenGlRW, pointsAct
         } = this.state;
         let { data, display, displayBar, keydown, useAxis, opt, Scalar, useScreen, useLight, bounds, show } = this.props;
         let scale = [];
@@ -297,7 +321,6 @@ export default class vtkView extends Component {
                 values: cells,
             },
         };
-        // console.log(Object.keys(data.data.CELLDATA).length);
         //是否显示结果
         if (document.querySelector('.textCanvas')) this.container.current.children[0].removeChild(document.querySelector('.textCanvas'))
         let modes = mode;
@@ -315,8 +338,10 @@ export default class vtkView extends Component {
         //应用ColorMap
         lut1.applyColorMap(preset);
         lut1.updateRange();
+
         if (OpenGlRW.initialize) gl(OpenGlRW);
         if (model.fullScreenRenderer) {
+            console.log(cells.length);
             if (Object.keys(data.data.CELLDATA).length === 0) Scalar = false;
             model.renderer.removeActor(model.bounds);
             if (data.data.CELLDATA === null || Object.keys(data.data.CELLDATA).length === 0) {
@@ -403,7 +428,7 @@ export default class vtkView extends Component {
                         polys: {
                             vtkClass: 'vtkCellArray',
                             dataType: "Float32Array",
-                            values: cells,
+                            values: cells,//.slice(2960976)
                         },
                         cellData: {
                             vtkClass: 'vtkDataSetAttributes',
@@ -413,17 +438,16 @@ export default class vtkView extends Component {
                                     vtkClass: 'vtkDataArray',
                                     name: 'pointScalars',
                                     dataType: 'Float32Array',
-                                    values: cellData[cellDataName[0]],
+                                    values: cellData[cellDataName[0]],//.slice(2960976/4)
                                 },
                             }],
                         }
                     };
                 }
-
             }
+
             model.renderer.removeActor(model.bounds);
             showBounds(bounds, model, this.container, vtk(polydata1));
-
             const mapper1 = vtkMapper.newInstance({
                 interpolateScalarsBeforeMapping: true
             });
@@ -446,10 +470,9 @@ export default class vtkView extends Component {
             actor1.getProperty().setOpacity(inputValue);
             actor1.setMapper(mapper1);
             model.renderer.removeActor(model.actor);
-            model.actor = actor1
+            model.actor = actor1;
             model.mapper = mapper1;
             if (Object.keys(data.data.CELLDATA).length !== 0) {
-                console.log(Scalar)
                 if (Scalar === false) {
                     displayBar = 0;
                     if (model.renderWindow) model.mapper.setScalarModeToUsePointData();
@@ -464,10 +487,22 @@ export default class vtkView extends Component {
                     if (model.renderWindow) model.mapper.setScalarModeToUseCellData();
                 }
             }
+            // for (let i = 0; i < pointsAct.length; i++) {
+            //     const sphereSource = vtkSphereSource.newInstance({
+            //         phiResolution: 20,
+            //         thetaResolution: 20,
+            //         radius: 10
+            //     });
+            //     const mapp = vtkMapper.newInstance();
+            //     const acto = vtkActor.newInstance();
+            //     acto.setPosition(pointsAct[i]);
+
+            //     mapp.setInputConnection(sphereSource.getOutputPort());
+            //     acto.setMapper(mapp);
+            //     model.renderer.addActor(acto);
+            // }
             model.renderer.addActor(actor1);
         }
-        
-
         displayBox = display;
         //改变显示样式
         if (model.renderer || Object.keys(cellData).length > 0) changeManipulators(model, opt, keydown, useLight, useAxis, unique, modes, this.container1, lut1, inputValue, polydata1, polydata2, min, max, Scalar);

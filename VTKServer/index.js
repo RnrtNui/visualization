@@ -2,7 +2,7 @@
 * 文件名：VTKServer/index.js
 * 作者：鲁杨飞
 * 创建时间：2020/8/24
-* 文件描述：VTKClient项目后端nodejs代码。
+* 文件描述：nodejs Server代码。
  */
 const app = require('express')();
 const fs = require("fs");
@@ -20,11 +20,12 @@ app.all('/*', function (req, res, next) {
     next();
 });
 let newObj = {};
-let dirPath = '/public/home/hzhang/hwtest/';
-let username = "hzhang";
-let ip = '12.2.5.7';
-let password = "hzhang@CASJC0424A7";
-let name = 'hw';
+let Obj = {};
+// let dirPath = '/public/home/hzhang/hwtest/';
+// let username = "hzhang";
+// let ip = '12.2.5.7';
+// let password = "hzhang@CASJC0424A7";
+// let name = 'hw';
 //read .CSV file
 function readCSV(arr, res, extname) {
     let newArr = [];
@@ -270,17 +271,13 @@ app.post('/transformation', function (req, res) {
         let command = gmshPath + ' ' + processPath + fileName + ' -' + meshType + ' -o ' + processPath + names[0] + "_" + time + outputFormat + ' -format ' + outputFormat.substr(1);
         cmd.get(
             command,
-            function (err, data, stderr) {
+            function (err, data1, stderr) {
                 console.log(data);
                 res.send("http://192.168.2.134:4000/visualization/" + names[0] + "_" + time + outputFormat);
             }
         );
     })
 })
-//模型预览
-// app.post('/preview', function (req, res) {
-// })
-
 //创建项目
 app.post('/createPro', function (req, res) {
     var postData = ''; -
@@ -314,7 +311,7 @@ app.post('/getModel', function (req, res) {
         let command = `sshpass -p "ma" scp -r -o "StrictHostKeyChecking=no" ma@192.168.2.112:/home/ma/\{greenland5km3d.flavia.msh,greenland5km3d.flavia.res\} /home/luyangfei/project/visualization/data/process/`;
         cmd.get(
             command,
-            function (err, data, stderr) {
+            function (err, data1, stderr) {
                 if (err !== null) {
                     console.log(stderr);
                 } else {
@@ -331,137 +328,515 @@ app.post('/getModel', function (req, res) {
 
 //SSH远程连接
 app.post('/sshConnection', function (req, res) {
-    var postData = ''; -
-        req.on('data', function (chunk) {
-            // chunk 默认是一个二进制数据，和 data 拼接会自动 toString
-            postData += chunk;
-        });
+    var postData = '';
+    req.on('data', function (chunk) {
+        // chunk 默认是一个二进制数据，和 data 拼接会自动 toString
+        postData += chunk;
+    });
     req.on('end', function () {
         //对url进行解码（url会对中文进行编码）
-        postData = decodeURI(postData);
-        username = JSON.parse(postData).username;
-        ip = JSON.parse(postData).ip;
-        password = JSON.parse(postData).password;
-        res.send("success");
+        postData = JSON.parse(decodeURI(postData));
+        let timeStamp = postData["timeStamp"];
+        let data = {};
+        data[timeStamp] = 1;
+        io.emit('sshConnection', data);
+        Obj[timeStamp] = {};
+        Obj[timeStamp] = Object.assign(Obj[timeStamp], postData.params);
+        let command = `sshpass -p "${Obj[timeStamp].password}" ssh ${Obj[timeStamp].username}@${Obj[timeStamp].ip} ls`;
+        cmd.get(command, function (err, data1, stderr) {
+            if (err !== null) {
+                res.send(false);
+                data[timeStamp] = 2;
+                io.emit('sshConnection', data);
+            } else {
+                res.send(true);
+                data[timeStamp] = 0;
+                io.emit('sshConnection', data);
+            }
+        });
+    });
+    req.on('error', (err) => {
+        console.log(err.message);
+        res.send(err.message);
     })
-})
+});
 //指定目录
 app.post('/assignPath', function (req, res) {
-    var postData = ''; -
-        req.on('data', function (chunk) {
-            postData += chunk;
-        });
+    var postData = '';
+    req.on('data', function (chunk) {
+        postData += chunk;
+    });
     req.on('end', function () {
-        postData = decodeURI(postData);
-        dirPath = JSON.parse(postData).dirPath;
-        let command = `sshpass -p "${password}" ssh -o "StrictHostKeyChecking=no" ${username}@${ip} "ls ${dirPath}"`;
-        cmd.get(
-            command,
-            function (err, data, stderr) {
-                if (err !== null) {
-                    res.send(false);
-                } else {
-                    res.send(true);
-                }
+        postData = JSON.parse(decodeURI(postData));
+        let timeStamp = postData["timeStamp"];
+        let data = {};
+        data[timeStamp] = 1;
+        io.emit('assignPath', data);
+        Obj[timeStamp] = Object.assign(Obj[timeStamp], postData.params);
+        let command = `sshpass -p "${Obj[timeStamp].password}" ssh -o "StrictHostKeyChecking=no" ${Obj[timeStamp].username}@${Obj[timeStamp].ip} "ls ${Obj[timeStamp].dirPath}"`;
+        cmd.get(command, function (err, data1, stderr) {
+            if (err !== null) {
+                res.send(false);
+                data[timeStamp] = 2;
+                io.emit('assignPath', data);
+            } else {
+                res.send(true);
+                data[timeStamp] = 0;
+                io.emit('assignPath', data);
             }
-        );
+        });
+    });
+    req.on('error', (err) => {
+        console.log(err.message);
+        res.send(err.message);
     })
 })
 //生成作业脚本
 app.post('/taskScripts', function (req, res) {
-    var postData = ''; -
-        req.on('data', function (chunk) {
-            postData += chunk;
-        });
+    var postData = '';
+    req.on('data', function (chunk) {
+        postData += chunk;
+    });
     req.on('end', function () {
         //对url进行解码（url会对中文进行编码）
-        postData = JSON.parse(decodeURI(postData)).params;
+        postData = JSON.parse(decodeURI(postData));
+        let timeStamp = postData["timeStamp"];
+        let data = {};
+        data[timeStamp] = 1;
+        io.emit('taskScripts', data);
+        Obj[timeStamp] = Object.assign(Obj[timeStamp], postData.params);
         let context =
             `#!/bin/bash
-#PBS -N ${postData.name}
-#PBS -l nodes=${postData.resourcesNodes}:ppn=${postData.resourcesPpn}
-#PBS -q ${postData.queue} 
-#PBS -o ${dirPath}${postData.name}.log
-#PBS -e ${dirPath}${postData.name}.err
-#PBS -l walltime=${postData.walltime}
+#PBS -N ${Obj[timeStamp].name}
+#PBS -l nodes=${Obj[timeStamp].resourcesNodes}:ppn=${Obj[timeStamp].resourcesPpn}
+#PBS -q ${Obj[timeStamp].queue} 
+#PBS -o ${Obj[timeStamp].dirPath}${Obj[timeStamp].name}.log
+#PBS -e ${Obj[timeStamp].dirPath}${Obj[timeStamp].name}.err
+#PBS -l walltime=${Obj[timeStamp].walltime}
         
-${postData.command}`
-        fs.writeFile('../data/process/' + postData.name + '.pbs', context, function (err) {
+${Obj[timeStamp].command}`
+        fs.writeFile('../data/process/' + Obj[timeStamp].name + '.pbs', context, function (err) {
             if (err) {
-                console.log('脚本写入失败', err);
+                console.log('Script write failed', err);
+                res.send("Script write failed")
             } else {
-                name = postData.name;
-                console.log('脚本写入成功');
+                let command = `sshpass -p "${Obj[timeStamp].password}" scp -r -o "StrictHostKeyChecking=no" /home/luyangfei/project/visualization/data/process/${Obj[timeStamp].name + '.pbs'} ${Obj[timeStamp].username}@${Obj[timeStamp].ip}:${Obj[timeStamp].dirPath}`;
+                cmd.get(command, function (err, data1, stderr) {
+                    if (err !== null) {
+                        console.log(false);
+                        res.send('Script written error!');
+                        data[timeStamp] = 2;
+                        io.emit('taskScripts', data);
+                    } else {
+                        res.send('Script written successfully!');
+                        data[timeStamp] = 0;
+                        io.emit('taskScripts', data);
+                    }
+                })
             }
         })
+    });
+    req.on('error', (err) => {
+        console.log(err.message);
+        res.send(err.message);
     })
-})
+});
 //执行作业脚本
 app.post('/runTaskScripts', function (req, res) {
-    console.log(name);
-    let command = `sshpass -p "${password}" scp -r -o "StrictHostKeyChecking=no" /home/luyangfei/project/visualization/data/process/${name + '.pbs'} ${username}@${ip}:${dirPath}`;
-    cmd.get(
-        command,
-        function (err, data, stderr) {
-            if (err !== null) {
-                console.log(false)
-            } else {
-                // console.log(true);
+    var postData = '';
+    req.on('data', function (chunk) {
+        postData += chunk;
+    });
+    req.on('end', function () {
+        //对url进行解码（url会对中文进行编码）
+        postData = JSON.parse(decodeURI(postData));
+        let timeStamp = postData["timeStamp"];
+        let data = {};
+        data[timeStamp] = 1;
+        io.emit('runTaskScripts', data);
+        cmd.get(
+            `sshpass -p "${Obj[timeStamp].password}" ssh -o "StrictHostKeyChecking=no" ${Obj[timeStamp].username}@${Obj[timeStamp].ip} "rm ${Obj[timeStamp].dirPath}${Obj[timeStamp].name}.log ${Obj[timeStamp].dirPath}${Obj[timeStamp].name}.err"`,
+            function (err, data1, stderr) {
+                console.log("Log deleted successfully!")
                 cmd.get(
-                    `sshpass -p "${password}" ssh -o "StrictHostKeyChecking=no" ${username}@${ip} "rm ${dirPath}${name}.log ${dirPath}${name}.err"`,
-                    function (err, data, stderr) {
-                        console.log("日志删除成功!")
-                        cmd.get(
-                            `sshpass -p "${password}" ssh -o "StrictHostKeyChecking=no" ${username}@${ip} qsub ${dirPath}${name}.pbs`,
-                            function (err, data, stderr) {
-                                if (err !== null) {
-                                    console.log(stderr)
-                                } else {
-                                    console.log(data)
-                                    io.emit('getStatus', "start");
-                                    let getStatus = () => {
-                                        cmd.get(
-                                            `sshpass -p "${password}" ssh -o "StrictHostKeyChecking=no" ${username}@${ip} /usr/bin/cat ${dirPath}${name}.log`,
-                                            function (err, data, stderr) {
-                                                if (data.indexOf('end') === -1) {
-                                                    io.emit('getStatus', "...");
-                                                    return getStatus();
-                                                } else {
-                                                    fs.writeFile('/home/luyangfei/project/visualization/data/process/message.txt', "end", function (err) {
-                                                        if (err) {
-                                                            console.log('日志写入失败', err);
-                                                        } else {
-                                                            io.emit('getStatus', "end");
-                                                            res.send(true);
-                                                        }
-                                                    })
-                                                }
-                                            }
-                                        );
+                    `sshpass -p "${Obj[timeStamp].password}" ssh -o "StrictHostKeyChecking=no" ${Obj[timeStamp].username}@${Obj[timeStamp].ip} qsub ${Obj[timeStamp].dirPath}${Obj[timeStamp].name}.pbs`,
+                    function (err, data1, stderr) {
+                        let getStatus = () => {
+                            // /usr/bin/cat ${dirPath}${name}.log`
+                            cmd.get(
+                                `sshpass -p "${Obj[timeStamp].password}" ssh -o "StrictHostKeyChecking=no" ${Obj[timeStamp].username}@${Obj[timeStamp].ip} qstat | grep ${Obj[timeStamp].name}`,
+                                function (err, data1, stderr) {
+                                    if (data1.length > 1) {
+                                        return getStatus();
+                                    } else {
+                                        console.log("Script execution completed");
+                                        res.send(true);
+                                        data[timeStamp] = 0;
+                                        io.emit('runTaskScripts', data);
                                     }
-                                    getStatus();
                                 }
-                            }
-                        );
+                            );
+                        }
+                        getStatus();
                     }
                 );
             }
+        );
+    });
+    req.on('error', (err) => {
+        console.log(err.message);
+        res.send(err.message);
+    })
+});
+
+//pull modelData
+app.post('/pullData', function (req, res) {
+    let postData = '';
+    req.on('data', function (chunk) {
+        postData += chunk;
+    });
+    req.on('end', function () {
+        postData = JSON.parse(decodeURI(postData));
+        let timeStamp = postData["timeStamp"];
+        let data = {};
+        data[timeStamp] = 1;
+        io.emit('pullData', data);
+        Obj[timeStamp] = Object.assign(Obj[timeStamp], postData.params);
+        if (Obj[timeStamp].dataNames === null || Obj[timeStamp].dataNames === []) {
+            let command = `sshpass -p "${Obj[timeStamp].password}" scp -r -o "StrictHostKeyChecking=no" ${Obj[timeStamp].username}@${Obj[timeStamp].ip}:${Obj[timeStamp].dirPath}/\{*.msh,*.res\} /home/luyangfei/project/visualization/data/process/`;
+            cmd.get(
+                command,
+                function (err, data1, stderr) {
+                    if (err !== null) {
+                        data[timeStamp] = 2;
+                        io.emit('pullData', data);
+                        res.send(false);
+                    } else {
+                        res.send("Data pull succeeded");
+                        data[timeStamp] = 0;
+                        io.emit('pullData', data);
+                    }
+                }
+            );
+        } else {
+            let command = `sshpass -p "${Obj[timeStamp].password}" scp -r -o "StrictHostKeyChecking=no" ${Obj[timeStamp].username}@${Obj[timeStamp].ip}:${Obj[timeStamp].dirPath}/\{${Obj[timeStamp].dataNames}\} /home/luyangfei/project/visualization/data/process/`;
+            cmd.get(
+                command,
+                function (err, data1, stderr) {
+                    if (err !== null) {
+                        res.send(false);
+                        data[timeStamp] = 2;
+                        io.emit('pullData', data);
+                    } else {
+                        res.send("Data pull succeeded");
+                        data[timeStamp] = 0;
+                        io.emit('pullData', data);
+                    }
+                }
+            );
         }
-    );
-})
+    });
+    req.on('error', (err) => {
+        console.log(err.message);
+        res.send(err.message);
+    })
+});
+//获取模型name
+app.post('/getFileName', function (req, res) {
+    let postData = '';
+    req.on('data', function (chunk) {
+        postData += chunk;
+    });
+    req.on('end', function () {
+        postData = JSON.parse(decodeURI(postData));
+        let timeStamp = postData["timeStamp"];
+        let data = {};
+        data[timeStamp] = 1;
+        io.emit('pullgetFileNameData', data);
+        let command = `sshpass -p "${Obj[timeStamp].password}" ssh -o "StrictHostKeyChecking=no" ${Obj[timeStamp].username}@${Obj[timeStamp].ip} ls ${Obj[timeStamp].dirPath}/*.msh`;
+        cmd.get(command, function (err, data1, stderr) {
+            if (err !== null) {
+                res.send(false);
+                data[timeStamp] = 2;
+                io.emit('pullgetFileNameData', data);
+            } else {
+                let files = data1.split('/');
+                res.send(files[files.length - 1]);
+                data[timeStamp] = 0;
+                io.emit('pullgetFileNameData', data);
+            }
+        });
+    });
+    req.on('error', (err) => {
+        console.log(err.message);
+        res.send(err.message);
+    })
+});
+//顺序执行流程
+app.post('/runProcess', function (req, res) {
+    let postData = '';
+    req.on('data', function (chunk) {
+        postData += chunk;
+    });
+    req.on('end', function () {
+        postData = JSON.parse(decodeURI(postData));
+        let timeStamp = postData[0]["timeStamp"];
+        let data = {}, lins = [];
+        data[timeStamp] = 1;
+        Obj[timeStamp] = {};
+        function sshConnection(Obj, resolve, reject) {
+            let command = `sshpass -p "${Obj[timeStamp].password}" ssh ${Obj[timeStamp].username}@${Obj[timeStamp].ip} ls`;
+            cmd.get(command, function (err, data1, stderr) {
+                if (err !== null) {
+                    reject(false);
+                } else {
+                    resolve(true);
+                }
+            });
+        }
+        function assignPath(Obj, resolve, reject) {
+            let command = `sshpass -p "${Obj[timeStamp].password}" ssh -o "StrictHostKeyChecking=no" ${Obj[timeStamp].username}@${Obj[timeStamp].ip} "ls ${Obj[timeStamp].dirPath}"`;
+            cmd.get(command, function (err, data1, stderr) {
+                if (err !== null) {
+                    reject(false);
+                } else {
+                    resolve(true);
+                }
+            });
+        }
+        function taskScripts(Obj, resolve, reject) {
+            let context =
+                `#!/bin/bash
+#PBS -N ${Obj[timeStamp].name}
+#PBS -l nodes=${Obj[timeStamp].resourcesNodes}:ppn=${Obj[timeStamp].resourcesPpn}
+#PBS -q ${Obj[timeStamp].queue} 
+#PBS -o ${Obj[timeStamp].dirPath}${Obj[timeStamp].name}.log
+#PBS -e ${Obj[timeStamp].dirPath}${Obj[timeStamp].name}.err
+#PBS -l walltime=${Obj[timeStamp].walltime}
+        
+${Obj[timeStamp].command}`
+            fs.writeFile('../data/process/' + Obj[timeStamp].name + '.pbs', context, function (err) {
+                if (err) {
+                    console.log('Script write failed', err);
+                } else {
+                    let command = `sshpass -p "${Obj[timeStamp].password}" scp -r -o "StrictHostKeyChecking=no" /home/luyangfei/project/visualization/data/process/${Obj[timeStamp].name + '.pbs'} ${Obj[timeStamp].username}@${Obj[timeStamp].ip}:${Obj[timeStamp].dirPath}`;
+                    cmd.get(command, function (err, data1, stderr) {
+                        if (err !== null) {
+                            console.log(false);
+                            reject('Script written error!');
+                        } else {
+                            console.log('Script written successfully!');
+                            resolve(true);
+                        }
+                    })
+                }
+            })
+        }
+        function runTaskScripts(Obj, resolve, reject) {
+            cmd.get(
+                `sshpass -p "${Obj[timeStamp].password}" ssh -o "StrictHostKeyChecking=no" ${Obj[timeStamp].username}@${Obj[timeStamp].ip} "rm ${Obj[timeStamp].dirPath}${Obj[timeStamp].name}.log ${Obj[timeStamp].dirPath}${Obj[timeStamp].name}.err"`,
+                function (err, data1, stderr) {
+                    console.log("Log deleted successfully!")
+                    cmd.get(
+                        `sshpass -p "${Obj[timeStamp].password}" ssh -o "StrictHostKeyChecking=no" ${Obj[timeStamp].username}@${Obj[timeStamp].ip} qsub ${Obj[timeStamp].dirPath}${Obj[timeStamp].name}.pbs`,
+                        function (err, data1, stderr) {
+                            let getStatus = () => {
+                                cmd.get(
+                                    `sshpass -p "${Obj[timeStamp].password}" ssh -o "StrictHostKeyChecking=no" ${Obj[timeStamp].username}@${Obj[timeStamp].ip} qstat | grep ${Obj[timeStamp].name}`,
+                                    function (err, data1, stderr) {
+                                        if (data1.length > 1) {
+                                            return getStatus();
+                                        } else {
+                                            console.log("Script execution completed");
+                                            resolve(true);
+                                        }
+                                    }
+                                );
+                            }
+                            getStatus();
+                        }
+                    );
+                }
+            );
+        }
+        function pullData(Obj, resolve, reject) {
+            if (Obj[timeStamp].dataNames === null) {
+                let command = `sshpass -p "${Obj[timeStamp].password}" scp -r -o "StrictHostKeyChecking=no" ${Obj[timeStamp].username}@${Obj[timeStamp].ip}:${Obj[timeStamp].dirPath}/\{*.msh,*.res\} /home/luyangfei/project/visualization/data/process/`;
+                cmd.get(command, function (err, data1, stderr) {
+                    if (err !== null) {
+                        reject(false);
+                    } else {
+                        resolve(true);
+                    }
+                });
+            } else {
+                let command = `sshpass -p "${Obj[timeStamp].password}" scp -r -o "StrictHostKeyChecking=no" ${Obj[timeStamp].username}@${Obj[timeStamp].ip}:${Obj[timeStamp].dirPath}/\{${Obj[timeStamp].dataNames}\} /home/luyangfei/project/visualization/data/process/`;
+                cmd.get(command, function (err, data1, stderr) {
+                    if (err !== null) {
+                        reject(false);
+                    } else {
+                        resolve(true);
+                    }
+                });
+            }
+        }
+        function getFileName(Obj, resolve, reject) {
+            let command = `sshpass -p "${Obj[timeStamp].password}" ssh -o "StrictHostKeyChecking=no" ${Obj[timeStamp].username}@${Obj[timeStamp].ip} ls ${Obj[timeStamp].dirPath}/*.msh`;
+            cmd.get(command, function (err, data1, stderr) {
+                if (err !== null) {
+                    rreject(false);
+                } else {
+                    let files = data1.split('/');
+                    resolve(files[files.length - 1]);
+                }
+            });
+        }
+        for (let i = 0; i < postData.length; i++) {
+            lins.push(postData[i].url);
+            Obj[timeStamp] = Object.assign(Obj[timeStamp], postData[i].params);
+        }
+        console.log(lins);
+        let i = 0;
+        let runProcess = function (res, Obj) {
+            data[timeStamp] = 1;
+            io.emit('sshConnection', data);
+            new Promise((resolve, reject) => {
+                if (i < postData.length && lins[i] === 'sshConnection') {
+                    sshConnection(Obj, resolve, reject);
+                } else if (i >= postData.length && lins[i] === 'sshConnection') {
+                    resolve(true);
+                } else {
+                    reject(false)
+                }
+            }).then(value => {
+                data[timeStamp] = 0;
+                io.emit('sshConnection', data);
+                if (value === true) {
+                    i = i + 1;
+                    return new Promise((resolve, reject) => {
+                        data[timeStamp] = 1;
+                        io.emit('assignPath', data);
+                        if (i < postData.length && lins[i] === 'assignPath') {
+                            assignPath(Obj, resolve, reject);
+                            i = i + 1;
+                        } else if (i >= postData.length && lins[i] === 'assignPath') {
+                            resolve(true);
+                        } else {
+                            reject(false)
+                        }
+                    }).then(value => {
+                        data[timeStamp] = 0;
+                        io.emit('assignPath', data);
+                        if (value === true) {
+                            return new Promise((resolve, reject) => {
+                                data[timeStamp] = 1;
+                                io.emit('taskScripts', data);
+                                if (i < postData.length && lins[i] === 'taskScripts') {
+                                    taskScripts(Obj, resolve, reject);
+                                    i = i + 1;
+                                } else if (i >= postData.length && lins[i] === 'taskScripts') {
+                                    resolve(true);
+                                } else {
+                                    reject(false)
+                                }
+                            }).then(value => {
+                                data[timeStamp] = 0;
+                                io.emit('taskScripts', data);
+                                if (value === true) {
+                                    return new Promise((resolve, reject) => {
+                                        data[timeStamp] = 1;
+                                        io.emit('runTaskScripts', data);
+                                        if (i < postData.length && lins[i] === 'runTaskScripts') {
+                                            runTaskScripts(Obj, resolve, reject);
+                                            i = i + 1;
+                                        } else if (i >= postData.length && lins[i] === 'runTaskScripts') {
+                                            resolve(true);
+                                        } else {
+                                            reject(false)
+                                        }
+                                    }).then(value => {
+                                        data[timeStamp] = 0;
+                                        io.emit('runTaskScripts', data);
+                                        if (value === true) {
+                                            return new Promise((resolve, reject) => {
+                                                data[timeStamp] = 1;
+                                                io.emit('pullData', data);
+                                                if (i < postData.length && lins[i] === 'pullData') {
+                                                    pullData(Obj, resolve, reject);
+                                                    i = i + 1;
+                                                } else if (i >= postData.length && lins[i] === 'pullData') {
+                                                    resolve(true);
+                                                } else {
+                                                    reject(false)
+                                                }
+                                            }).then(value => {
+                                                data[timeStamp] = 0;
+                                                io.emit('pullData', data);
+                                                if (value === true) {
+                                                    return new Promise((resolve, reject) => {
+                                                        data[timeStamp] = 1;
+                                                        io.emit('getFileName', data);
+                                                        if (i < postData.length && lins[i] === 'getFileName') {
+                                                            getFileName(Obj, resolve, reject);
+                                                            i = i + 1;
+                                                        } else if (i >= postData.length && lins[i] === 'getFileName') {
+                                                            resolve(true);
+                                                        } else {
+                                                            reject(false)
+                                                        }
+                                                    }).then(value => {
+                                                        data[timeStamp] = 0;
+                                                        io.emit('getFileName', data);
+                                                        res.send(value);
+                                                    }).catch((err) => {
+                                                        res.send('getFileName' + err);
+                                                        data[timeStamp] = 2;
+                                                        io.emit('getFileName', data);
+                                                    });
+                                                }
+                                            }).catch((err) => {
+                                                res.send('pullData' + err);
+                                                data[timeStamp] = 2;
+                                                io.emit('pullData', data);
+                                            });
+                                        }
+                                    }).catch((err) => {
+                                        res.send('runTaskScripts' + err);
+                                        data[timeStamp] = 2;
+                                        io.emit('runTaskScripts', data);
+                                    });
+                                }
+                            }).catch((err) => {
+                                res.send('taskScripts' + err);
+                                data[timeStamp] = 2;
+                                io.emit('taskScripts', data);
+                            });
+                        }
+                    }).catch((err) => {
+                        res.send('assignPath' + err);
+                        data[timeStamp] = 2;
+                        io.emit('assignPath', data);
+                    });
+                }
+            }).catch((err) => {
+                res.send('sshConnection' + err);
+                data[timeStamp] = 2;
+                io.emit('sshConnection', data);
+            });
+        }
+        runProcess(res, Obj);
+    });
+    req.on('error', (err) => {
+        console.log(err.message);
+        res.send(err.message);
+    })
+});
 //socket.io向前端发送状态
 io.on('connection', (socket) => {
     let user = socket.handshake.address.split('ffff:')[1];
-    // console.log(socket.handshake);
-    console.log(user + "已连接!");
-    fs.watchFile('/home/luyangfei/project/visualization/data/process/message.txt', (curr, prev) => {
-        var data = fs.readFileSync("/home/luyangfei/project/visualization/data/process/message.txt");
-        let ndata = data.toString();
-        io.emit('getStatus', ndata);
-    });
-
+    console.log(user + " Connected!");
     socket.on('disconnect', () => {
-        console.log(user + '已断开连接!');
+        console.log(user + ' Disconnected!');
     })
 })
 http.listen(8003);
