@@ -24,7 +24,6 @@ module.exports = function socket (socket) {
   for (var key in socket.request.sessionStore.sessions){
     socket.request.session = Object.assign(socket.request.session, JSON.parse(socket.request.sessionStore.sessions[key]));
   }
-  console.log(socket.request.session);
   var conn = new SSH();
   socket.on('geometry', function socketOnGeometry (cols, rows) {
     termCols = cols;

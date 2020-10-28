@@ -6,6 +6,7 @@
  */
 const app = require('express')();
 const fs = require("fs");
+const events = require('events');
 let path = require('path');
 let cmd = require('node-cmd');
 let http = require('http').createServer(app);
@@ -354,11 +355,11 @@ app.post('/sshConnection', function (req, res) {
                 io.emit('sshConnection', data);
             }
         });
+        req.on('error', (err) => {
+            console.log(err.message);
+            res.send(err.message);
+        })
     });
-    req.on('error', (err) => {
-        console.log(err.message);
-        res.send(err.message);
-    })
 });
 //指定目录
 app.post('/assignPath', function (req, res) {
@@ -369,22 +370,28 @@ app.post('/assignPath', function (req, res) {
     req.on('end', function () {
         postData = JSON.parse(decodeURI(postData));
         let timeStamp = postData["timeStamp"];
-        let data = {};
-        data[timeStamp] = 1;
-        io.emit('assignPath', data);
-        Obj[timeStamp] = Object.assign(Obj[timeStamp], postData.params);
-        let command = `sshpass -p "${Obj[timeStamp].password}" ssh -o "StrictHostKeyChecking=no" ${Obj[timeStamp].username}@${Obj[timeStamp].ip} "ls ${Obj[timeStamp].dirPath}"`;
-        cmd.get(command, function (err, data1, stderr) {
-            if (err !== null) {
-                res.send(false);
-                data[timeStamp] = 2;
-                io.emit('assignPath', data);
-            } else {
-                res.send(true);
-                data[timeStamp] = 0;
-                io.emit('assignPath', data);
-            }
-        });
+        if (timeStamp in Obj) {
+            let data = {};
+            data[timeStamp] = 1;
+            io.emit('assignPath', data);
+            Obj[timeStamp] = Object.assign(Obj[timeStamp], postData.params);
+            let command = `sshpass -p "${Obj[timeStamp].password}" ssh -o "StrictHostKeyChecking=no" ${Obj[timeStamp].username}@${Obj[timeStamp].ip} "ls ${Obj[timeStamp].dirPath}"`;
+            cmd.get(command, function (err, data1, stderr) {
+                if (err !== null) {
+                    res.send(false);
+                    data[timeStamp] = 2;
+                    io.emit('assignPath', data);
+                } else {
+                    res.send(true);
+                    data[timeStamp] = 0;
+                    io.emit('assignPath', data);
+                }
+            });
+        } else {
+            data[timeStamp] = 2;
+            io.emit('assignPath', data);
+            res.send(false);
+        }
     });
     req.on('error', (err) => {
         console.log(err.message);
@@ -401,12 +408,13 @@ app.post('/taskScripts', function (req, res) {
         //对url进行解码（url会对中文进行编码）
         postData = JSON.parse(decodeURI(postData));
         let timeStamp = postData["timeStamp"];
-        let data = {};
-        data[timeStamp] = 1;
-        io.emit('taskScripts', data);
-        Obj[timeStamp] = Object.assign(Obj[timeStamp], postData.params);
-        let context =
-            `#!/bin/bash
+        if (timeStamp in Obj) {
+            let data = {};
+            data[timeStamp] = 1;
+            io.emit('taskScripts', data);
+            Obj[timeStamp] = Object.assign(Obj[timeStamp], postData.params);
+            let context =
+                `#!/bin/bash
 #PBS -N ${Obj[timeStamp].name}
 #PBS -l nodes=${Obj[timeStamp].resourcesNodes}:ppn=${Obj[timeStamp].resourcesPpn}
 #PBS -q ${Obj[timeStamp].queue} 
@@ -415,26 +423,31 @@ app.post('/taskScripts', function (req, res) {
 #PBS -l walltime=${Obj[timeStamp].walltime}
         
 ${Obj[timeStamp].command}`
-        fs.writeFile('../data/process/' + Obj[timeStamp].name + '.pbs', context, function (err) {
-            if (err) {
-                console.log('Script write failed', err);
-                res.send("Script write failed")
-            } else {
-                let command = `sshpass -p "${Obj[timeStamp].password}" scp -r -o "StrictHostKeyChecking=no" /home/luyangfei/project/visualization/data/process/${Obj[timeStamp].name + '.pbs'} ${Obj[timeStamp].username}@${Obj[timeStamp].ip}:${Obj[timeStamp].dirPath}`;
-                cmd.get(command, function (err, data1, stderr) {
-                    if (err !== null) {
-                        console.log(false);
-                        res.send('Script written error!');
-                        data[timeStamp] = 2;
-                        io.emit('taskScripts', data);
-                    } else {
-                        res.send('Script written successfully!');
-                        data[timeStamp] = 0;
-                        io.emit('taskScripts', data);
-                    }
-                })
-            }
-        })
+            fs.writeFile('../data/process/' + Obj[timeStamp].name + '.pbs', context, function (err) {
+                if (err) {
+                    console.log('Script write failed', err);
+                    res.send("Script write failed")
+                } else {
+                    let command = `sshpass -p "${Obj[timeStamp].password}" scp -r -o "StrictHostKeyChecking=no" /home/luyangfei/project/visualization/data/process/${Obj[timeStamp].name + '.pbs'} ${Obj[timeStamp].username}@${Obj[timeStamp].ip}:${Obj[timeStamp].dirPath}`;
+                    cmd.get(command, function (err, data1, stderr) {
+                        if (err !== null) {
+                            console.log(false);
+                            res.send('Script written error!');
+                            data[timeStamp] = 2;
+                            io.emit('taskScripts', data);
+                        } else {
+                            res.send('Script written successfully!');
+                            data[timeStamp] = 0;
+                            io.emit('taskScripts', data);
+                        }
+                    })
+                }
+            })
+        } else {
+            data[timeStamp] = 2;
+            io.emit('taskScripts', data);
+            res.send(false);
+        }
     });
     req.on('error', (err) => {
         console.log(err.message);
@@ -451,37 +464,43 @@ app.post('/runTaskScripts', function (req, res) {
         //对url进行解码（url会对中文进行编码）
         postData = JSON.parse(decodeURI(postData));
         let timeStamp = postData["timeStamp"];
-        let data = {};
-        data[timeStamp] = 1;
-        io.emit('runTaskScripts', data);
-        cmd.get(
-            `sshpass -p "${Obj[timeStamp].password}" ssh -o "StrictHostKeyChecking=no" ${Obj[timeStamp].username}@${Obj[timeStamp].ip} "rm ${Obj[timeStamp].dirPath}${Obj[timeStamp].name}.log ${Obj[timeStamp].dirPath}${Obj[timeStamp].name}.err"`,
-            function (err, data1, stderr) {
-                console.log("Log deleted successfully!")
-                cmd.get(
-                    `sshpass -p "${Obj[timeStamp].password}" ssh -o "StrictHostKeyChecking=no" ${Obj[timeStamp].username}@${Obj[timeStamp].ip} qsub ${Obj[timeStamp].dirPath}${Obj[timeStamp].name}.pbs`,
-                    function (err, data1, stderr) {
-                        let getStatus = () => {
-                            // /usr/bin/cat ${dirPath}${name}.log`
-                            cmd.get(
-                                `sshpass -p "${Obj[timeStamp].password}" ssh -o "StrictHostKeyChecking=no" ${Obj[timeStamp].username}@${Obj[timeStamp].ip} qstat | grep ${Obj[timeStamp].name}`,
-                                function (err, data1, stderr) {
-                                    if (data1.length > 1) {
-                                        return getStatus();
-                                    } else {
-                                        console.log("Script execution completed");
-                                        res.send(true);
-                                        data[timeStamp] = 0;
-                                        io.emit('runTaskScripts', data);
+        if (timeStamp in Obj) {
+            let data = {};
+            data[timeStamp] = 1;
+            io.emit('runTaskScripts', data);
+            cmd.get(
+                `sshpass -p "${Obj[timeStamp].password}" ssh -o "StrictHostKeyChecking=no" ${Obj[timeStamp].username}@${Obj[timeStamp].ip} "rm ${Obj[timeStamp].dirPath}${Obj[timeStamp].name}.log ${Obj[timeStamp].dirPath}${Obj[timeStamp].name}.err"`,
+                function (err, data1, stderr) {
+                    console.log("Log deleted successfully!")
+                    cmd.get(
+                        `sshpass -p "${Obj[timeStamp].password}" ssh -o "StrictHostKeyChecking=no" ${Obj[timeStamp].username}@${Obj[timeStamp].ip} qsub ${Obj[timeStamp].dirPath}${Obj[timeStamp].name}.pbs`,
+                        function (err, data1, stderr) {
+                            let getStatus = () => {
+                                // /usr/bin/cat ${dirPath}${name}.log`
+                                cmd.get(
+                                    `sshpass -p "${Obj[timeStamp].password}" ssh -o "StrictHostKeyChecking=no" ${Obj[timeStamp].username}@${Obj[timeStamp].ip} qstat | grep ${Obj[timeStamp].name}`,
+                                    function (err, data1, stderr) {
+                                        if (data1.length > 1) {
+                                            return getStatus();
+                                        } else {
+                                            console.log("Script execution completed");
+                                            res.send(true);
+                                            data[timeStamp] = 0;
+                                            io.emit('runTaskScripts', data);
+                                        }
                                     }
-                                }
-                            );
+                                );
+                            }
+                            getStatus();
                         }
-                        getStatus();
-                    }
-                );
-            }
-        );
+                    );
+                }
+            );
+        } else {
+            data[timeStamp] = 2;
+            io.emit('runTaskScripts', data);
+            res.send(false);
+        }
     });
     req.on('error', (err) => {
         console.log(err.message);
@@ -498,42 +517,48 @@ app.post('/pullData', function (req, res) {
     req.on('end', function () {
         postData = JSON.parse(decodeURI(postData));
         let timeStamp = postData["timeStamp"];
-        let data = {};
-        data[timeStamp] = 1;
-        io.emit('pullData', data);
-        Obj[timeStamp] = Object.assign(Obj[timeStamp], postData.params);
-        if (Obj[timeStamp].dataNames === null || Obj[timeStamp].dataNames === []) {
-            let command = `sshpass -p "${Obj[timeStamp].password}" scp -r -o "StrictHostKeyChecking=no" ${Obj[timeStamp].username}@${Obj[timeStamp].ip}:${Obj[timeStamp].dirPath}/\{*.msh,*.res\} /home/luyangfei/project/visualization/data/process/`;
-            cmd.get(
-                command,
-                function (err, data1, stderr) {
-                    if (err !== null) {
-                        data[timeStamp] = 2;
-                        io.emit('pullData', data);
-                        res.send(false);
-                    } else {
-                        res.send("Data pull succeeded");
-                        data[timeStamp] = 0;
-                        io.emit('pullData', data);
+        if (timeStamp in Obj) {
+            let data = {};
+            data[timeStamp] = 1;
+            io.emit('pullData', data);
+            Obj[timeStamp] = Object.assign(Obj[timeStamp], postData.params);
+            if (Obj[timeStamp].dataNames === null || Obj[timeStamp].dataNames === []) {
+                let command = `sshpass -p "${Obj[timeStamp].password}" scp -r -o "StrictHostKeyChecking=no" ${Obj[timeStamp].username}@${Obj[timeStamp].ip}:${Obj[timeStamp].dirPath}/\{*.msh,*.res\} /home/luyangfei/project/visualization/data/process/`;
+                cmd.get(
+                    command,
+                    function (err, data1, stderr) {
+                        if (err !== null) {
+                            data[timeStamp] = 2;
+                            io.emit('pullData', data);
+                            res.send(false);
+                        } else {
+                            res.send("Data pull succeeded");
+                            data[timeStamp] = 0;
+                            io.emit('pullData', data);
+                        }
                     }
-                }
-            );
+                );
+            } else {
+                let command = `sshpass -p "${Obj[timeStamp].password}" scp -r -o "StrictHostKeyChecking=no" ${Obj[timeStamp].username}@${Obj[timeStamp].ip}:${Obj[timeStamp].dirPath}/\{${Obj[timeStamp].dataNames}\} /home/luyangfei/project/visualization/data/process/`;
+                cmd.get(
+                    command,
+                    function (err, data1, stderr) {
+                        if (err !== null) {
+                            res.send(false);
+                            data[timeStamp] = 2;
+                            io.emit('pullData', data);
+                        } else {
+                            res.send("Data pull succeeded");
+                            data[timeStamp] = 0;
+                            io.emit('pullData', data);
+                        }
+                    }
+                );
+            }
         } else {
-            let command = `sshpass -p "${Obj[timeStamp].password}" scp -r -o "StrictHostKeyChecking=no" ${Obj[timeStamp].username}@${Obj[timeStamp].ip}:${Obj[timeStamp].dirPath}/\{${Obj[timeStamp].dataNames}\} /home/luyangfei/project/visualization/data/process/`;
-            cmd.get(
-                command,
-                function (err, data1, stderr) {
-                    if (err !== null) {
-                        res.send(false);
-                        data[timeStamp] = 2;
-                        io.emit('pullData', data);
-                    } else {
-                        res.send("Data pull succeeded");
-                        data[timeStamp] = 0;
-                        io.emit('pullData', data);
-                    }
-                }
-            );
+            data[timeStamp] = 2;
+            io.emit('pullData', data);
+            res.send(false);
         }
     });
     req.on('error', (err) => {
@@ -550,22 +575,29 @@ app.post('/getFileName', function (req, res) {
     req.on('end', function () {
         postData = JSON.parse(decodeURI(postData));
         let timeStamp = postData["timeStamp"];
-        let data = {};
-        data[timeStamp] = 1;
-        io.emit('pullgetFileNameData', data);
-        let command = `sshpass -p "${Obj[timeStamp].password}" ssh -o "StrictHostKeyChecking=no" ${Obj[timeStamp].username}@${Obj[timeStamp].ip} ls ${Obj[timeStamp].dirPath}/*.msh`;
-        cmd.get(command, function (err, data1, stderr) {
-            if (err !== null) {
-                res.send(false);
-                data[timeStamp] = 2;
-                io.emit('pullgetFileNameData', data);
-            } else {
-                let files = data1.split('/');
-                res.send(files[files.length - 1]);
-                data[timeStamp] = 0;
-                io.emit('pullgetFileNameData', data);
-            }
-        });
+        if (timeStamp in Obj) {
+
+            let data = {};
+            data[timeStamp] = 1;
+            io.emit('pullgetFileNameData', data);
+            let command = `sshpass -p "${Obj[timeStamp].password}" ssh -o "StrictHostKeyChecking=no" ${Obj[timeStamp].username}@${Obj[timeStamp].ip} ls ${Obj[timeStamp].dirPath}/*.msh`;
+            cmd.get(command, function (err, data1, stderr) {
+                if (err !== null) {
+                    res.send(false);
+                    data[timeStamp] = 2;
+                    io.emit('pullgetFileNameData', data);
+                } else {
+                    let files = data1.split('/');
+                    res.send(files[files.length - 1]);
+                    data[timeStamp] = 0;
+                    io.emit('pullgetFileNameData', data);
+                }
+            });
+        } else {
+            data[timeStamp] = 2;
+            io.emit('getFileName', data);
+            res.send(false);
+        }
     });
     req.on('error', (err) => {
         console.log(err.message);
@@ -695,7 +727,6 @@ ${Obj[timeStamp].command}`
             lins.push(postData[i].url);
             Obj[timeStamp] = Object.assign(Obj[timeStamp], postData[i].params);
         }
-        console.log(lins);
         let i = 0;
         let runProcess = function (res, Obj) {
             data[timeStamp] = 1;
@@ -838,5 +869,15 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         console.log(user + ' Disconnected!');
     })
-})
+});
+// 创建一个事件监听对象
+const emitter = new events.EventEmitter();
+// 监听error事件
+emitter.addListener('error', (e) => {
+    // 处理异常信息
+    console.log(e);
+});
+
+// 触发 error事件
+// emitter.emit('error', new Error('代码出错了'));
 http.listen(8003);
