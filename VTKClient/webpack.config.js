@@ -53,12 +53,12 @@ module.exports = {
                 }
             }
         },
-        historyApiFallback: true,
-        // historyApiFallback: {
-        //     rewrites: [
-        //         { from: /./, to: 'index.html' }
-        //     ]
-        // },//不跳转，用于开发单页面应用，依赖于HTML5 history API 设置为true点击链接还是指向index.html
+        // historyApiFallback: true,
+        historyApiFallback: {
+            rewrites: [
+                { from: /./, to: 'index.html' }
+            ]
+        },//不跳转，用于开发单页面应用，依赖于HTML5 history API 设置为true点击链接还是指向index.html
     },
 
     module: {
@@ -109,5 +109,5 @@ module.exports = {
             }
         }),  
     ],
-    // devtool: "inline-source-map",//每个module会通过eval()来执行，生成一个没有列信息（column-mappings）的SourceMaps文件，不包含loader的 sourcemap（譬如 babel 的 sourcemap）.
+    devtool: "inline-source-map",//每个module会通过eval()来执行，生成一个没有列信息（column-mappings）的SourceMaps文件，不包含loader的 sourcemap（譬如 babel 的 sourcemap）.
 }

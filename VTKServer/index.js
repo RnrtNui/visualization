@@ -540,20 +540,17 @@ app.post('/pullData', function (req, res) {
                 );
             } else {
                 let command = `sshpass -p "${Obj[timeStamp].password}" scp -r -o "StrictHostKeyChecking=no" ${Obj[timeStamp].username}@${Obj[timeStamp].ip}:${Obj[timeStamp].dirPath}/\{${Obj[timeStamp].dataNames}\} /home/luyangfei/project/visualization/data/process/`;
-                cmd.get(
-                    command,
-                    function (err, data1, stderr) {
-                        if (err !== null) {
-                            res.send(false);
-                            data[timeStamp] = 2;
-                            io.emit('pullData', data);
-                        } else {
-                            res.send("Data pull succeeded");
-                            data[timeStamp] = 0;
-                            io.emit('pullData', data);
-                        }
+                cmd.get(command, function (err, data1, stderr) {
+                    if (err !== null) {
+                        res.send(false);
+                        data[timeStamp] = 2;
+                        io.emit('pullData', data);
+                    } else {
+                        res.send("Data pull succeeded");
+                        data[timeStamp] = 0;
+                        io.emit('pullData', data);
                     }
-                );
+                });
             }
         } else {
             data[timeStamp] = 2;
