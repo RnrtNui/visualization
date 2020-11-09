@@ -7,19 +7,24 @@
 // import Draggable from 'react-draggable';
 import React, { Component } from 'react';
 import { Modal, Button } from 'antd';
-
+import cookie from 'react-cookies';
+import axios from 'axios'
 export default class offView extends Component {
     constructor(props) {
         super(props);
         this.state = {
-             visible: false
+            visible: false
         }
         this.container = React.createRef();
         this.container1 = React.createRef();
     };
 
     componentDidMount() {
-
+        cookie.save('userId', "123");
+        let data = { FileName: "mod3.msh" };
+        axios.post('http://192.168.2.134:8002/mod', data).then(req => {
+            console.log(req);
+        });
     };
     showModal = () => {
         this.setState({
@@ -44,17 +49,7 @@ export default class offView extends Component {
     render() {
         return (
             <>
-                <Button type="primary" onClick={this.showModal}>
-                    Open Modal
-              </Button>
-                <Modal
-                    title="Basic Modal"
-                    visible={this.state.visible}
-                    onOk={this.handleOk}
-                    onCancel={this.handleCancel}
-                >
-                    <iframe src="http://192.168.2.134:8004/ssh/host/12.2.5.7/hzhang/hzhang@CASJC0424A7" frameBorder="0"></iframe>
-                </Modal>
+
             </>
         );
     }

@@ -53,11 +53,12 @@ module.exports = {
                 }
             }
         },
-        historyApiFallback: {
-            rewrites: [
-                { from: /./, to: 'index.html' }
-            ]
-        },//不跳转，用于开发单页面应用，依赖于HTML5 history API 设置为true点击链接还是指向index.html
+        historyApiFallback: true,
+        // historyApiFallback: {
+        //     rewrites: [
+        //         { from: /./, to: 'index.html' }
+        //     ]
+        // },//不跳转，用于开发单页面应用，依赖于HTML5 history API 设置为true点击链接还是指向index.html
     },
 
     module: {
@@ -95,12 +96,18 @@ module.exports = {
     },
 
     plugins: [
+        new webpack.HotModuleReplacementPlugin(),
         new webpack.NamedModulesPlugin(),//当开启 HMR 的时候使用该插件会显示模块的相对路径，建议用于开发环境。
         new HtmlWebpackPlugin({
             filename: 'index.html',
             template: path.join(__dirname, './src/template.html'),   //指定模板页面,
         }),
         new ExtractTextPlugin("styles.css"),
+        new webpack.DefinePlugin({
+            "process.env": {
+            NODE_ENV: JSON.stringify("production")
+            }
+        }),  
     ],
-    devtool: "inline-source-map",//每个module会通过eval()来执行，生成一个没有列信息（column-mappings）的SourceMaps文件，不包含loader的 sourcemap（譬如 babel 的 sourcemap）.
+    // devtool: "inline-source-map",//每个module会通过eval()来执行，生成一个没有列信息（column-mappings）的SourceMaps文件，不包含loader的 sourcemap（譬如 babel 的 sourcemap）.
 }
