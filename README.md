@@ -35,7 +35,7 @@
 ###webssh2（web终端）:
     注意：每次更新package.json需要执行npm install更新依赖包。
     1、进入webssh2目录下打开控制台通过  npm install 安装依赖包;
-    2、修改webssh2/client/src/目录下的client.htm中的两处"http://192.168.2.134:8004"改为本机ip地址+端口号;
+    2、修改webssh2/client/src/目录下的client.htm中的两处"http://192.168.2.134:8004"改为本机ip地址+端口号;修改webssh2/server/app.js中监听的ip;
     3、npm run builddev 构建项目;
     4、通过 npm start 启动项目;
     5、浏览器访问http:// + 本机ip + :端口 + /ssh/host/ + 访问的终端ip + / + 用户名 + / + 密码。
