@@ -8,6 +8,8 @@ import { faBars, faClipboard, faDownload, faKey, faCog } from '@fortawesome/free
 library.add(faBars, faClipboard, faDownload, faKey, faCog)
 dom.watch()
 
+let connectUrl = 'http://192.168.6.103:8004'
+
 require('xterm/dist/xterm.css')
 require('../css/style.css')
 
@@ -43,7 +45,7 @@ if (document.location.pathname) {
   var base = parts.slice(0, parts.length - 1).join('/') + '/'
   var resource = base.substring(1) + 'socket.io'
   console.log(resource)
-  socket = io.connect("http://192.168.2.134:8004", {
+  socket = io.connect(connectUrl, {
     resource: resource
   })
 } else {

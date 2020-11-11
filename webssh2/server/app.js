@@ -1,20 +1,20 @@
-'use strict';
+'use strict'
 /* jshint esversion: 6, asi: true, node: true */
 // app.js
 
-var path = require('path');
-var fs = require('fs');
-var nodeRoot = path.dirname(require.main.filename);
-var configPath = path.join(nodeRoot, 'config.json');
-var publicPath = path.join(nodeRoot, 'client', 'public');
-console.log('WebSSH2 service reading config from: ' + configPath);
-var express = require('express');
-var logger = require('morgan');
+var path = require('path')
+var fs = require('fs')
+var nodeRoot = path.dirname(require.main.filename)
+var configPath = path.join(nodeRoot, 'config.json')
+var publicPath = path.join(nodeRoot, 'client', 'public')
+console.log('WebSSH2 service reading config from: ' + configPath)
+var express = require('express')
+// var logger = require('morgan');
 
 // sane defaults if config.json or parts are missing
 let config = {
   'listen': {
-    'ip': '192.168.2.134',
+    'ip': '192.168.6.103',
     'port': 8004
   },
   'user': {
@@ -22,7 +22,7 @@ let config = {
     'password': null
   },
   'ssh': {
-    'host': '12.2.5.7',
+    'host': '192.168.2.134',
     'port': 22,
     'term': 'xterm-color',
     'readyTimeout': 20000,
@@ -89,15 +89,15 @@ let config = {
 try {
   if (fs.existsSync(configPath)) {
     // console.log('ephemeral_auth service reading config from: ' + configPath);
-    config = require('read-config')(configPath);
+    config = require('read-config')(configPath)
   } else {
     // console.error('\n\nERROR: Missing config.json for webssh. Current config: ' + JSON.stringify(config));
-    console.error('\n  See config.json.sample for details\n\n');
+    console.error('\n  See config.json.sample for details\n\n')
   }
 } catch (err) {
   // console.error('\n\nERROR: Missing config.json for webssh. Current config: ' + JSON.stringify(config));
-  console.error('\n  See config.json.sample for details\n\n');
-  console.error('ERROR:\n\n  ' + err);
+  console.error('\n  See config.json.sample for details\n\n')
+  console.error('ERROR:\n\n  ' + err)
 }
 
 var session = require('express-session')({
@@ -106,44 +106,44 @@ var session = require('express-session')({
   resave: true,
   saveUninitialized: false,
   unset: 'destroy'
-});
-var app = express();
-var compression = require('compression');
-var server = require('http').Server(app);
-var myutil = require('./util');
-var validator = require('validator');
-var io = require('socket.io')(server, { serveClient: false });
-var socket = require('./socket');
-var expressOptions = require('./expressOptions');
+})
+var app = express()
+var compression = require('compression')
+var server = require('http').Server(app)
+var myutil = require('./util')
+var validator = require('validator')
+var io = require('socket.io')(server, { serveClient: false })
+var socket = require('./socket')
+var expressOptions = require('./expressOptions')
 
 // express
-app.use(compression({ level: 9 }));
-app.use(session);
+app.use(compression({ level: 9 }))
+app.use(session)
 // app.use(myutil.basicAuth);
 // if (config.accesslog) app.use(logger('common'));
-app.disable('x-powered-by');
+app.disable('x-powered-by')
 app.all('/*', function (req, res, next) {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Content-Length, Authorization, Accept, X-Requested-With , yourHeaderFeild');
-  res.header("Access-Control-Allow-Methods", "PUT,POST,GET,DELETE,OPTIONS");
-  res.header("access-control-allow-credentials", "true");
-  res.header("X-Powered-By", '3.2.1');
+  res.header('Access-Control-Allow-Origin', '*')
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Content-Length, Authorization, Accept, X-Requested-With , yourHeaderFeild')
+  res.header('Access-Control-Allow-Methods', 'PUT,POST,GET,DELETE,OPTIONS')
+  res.header('access-control-allow-credentials', 'true')
+  res.header('X-Powered-By', '3.2.1')
   // res.header("Content-Type", "application/json;charset=utf-8");
-  next();
-});
+  next()
+})
 // static files
-app.use(express.static(publicPath, expressOptions));
+app.use(express.static(publicPath, expressOptions))
 
 app.get('/reauth', function (req, res, next) {
-  var r = req.headers.referer || '/';
-  res.status(401).send('<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=' + r + '"></head><body bgcolor="#000"></body></html>');
-});
+  var r = req.headers.referer || '/'
+  res.status(401).send('<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=' + r + '"></head><body bgcolor="#000"></body></html>')
+})
 
 app.get('/ssh/host/:host?/:username?/:password?', function (req, res, next) {
-  res.sendFile(path.join(path.join(publicPath, 'client.htm')));
+  res.sendFile(path.join(path.join(publicPath, 'client.htm')))
   // capture, assign, and validated variables
-  req.session.username = req.params.username;
-  req.session.userpassword = req.params.password;
+  req.session.username = req.params.username
+  req.session.userpassword = req.params.password
   req.session.ssh = {
     host: (validator.isIP(req.params.host + '') && req.params.host) ||
       (validator.isFQDN(req.params.host) && req.params.host) ||
@@ -176,28 +176,28 @@ app.get('/ssh/host/:host?/:username?/:password?', function (req, res, next) {
     readyTimeout: (validator.isInt(req.query.readyTimeout + '', { min: 1, max: 300000 }) &&
       req.query.readyTimeout) || config.ssh.readyTimeout
   }
-  if (req.session.ssh.header.name) validator.escape(req.session.ssh.header.name);
-  if (req.session.ssh.header.background) validator.escape(req.session.ssh.header.background);
-});
+  if (req.session.ssh.header.name) validator.escape(req.session.ssh.header.name)
+  if (req.session.ssh.header.background) validator.escape(req.session.ssh.header.background)
+})
 
 // express error handling
 app.use(function (req, res, next) {
-  res.status(404).send("Sorry can't find that!");
-});
+  res.status(404).send("Sorry can't find that!")
+})
 
 app.use(function (err, req, res, next) {
-  console.error(err.stack);
-  res.status(500).send('Something broke!');
-});
+  console.error(err.stack)
+  res.status(500).send('Something broke!')
+})
 
 // socket.io
 // expose express session with socket.request.session
 io.use(function (socket, next) {
   (socket.request.res) ? session(socket.request, socket.request.res, next)
-    : next(next);
-});
+    : next(next)
+})
 
 // bring up socket
-io.on('connection', socket);
+io.on('connection', socket)
 
-module.exports = { server: server, config: config };
+module.exports = { server: server, config: config }
