@@ -6,4 +6,4 @@
 */
 // export let goUrl = "http://192.168.2.134:8100";
 
-export let goUrl = "http://192.168.2.134:8002";
+export let goUrl = "http://0.0.0.0:8002";

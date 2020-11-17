@@ -31,7 +31,7 @@ module.exports = {
 
     devServer: {
         port: 4000,
-        host: '192.168.2.134',
+        host: '0.0.0.0',
         useLocalIp: true,
         watchContentBase: true,
         disableHostCheck: true,
@@ -46,7 +46,7 @@ module.exports = {
         publicPath: "/",
         proxy: {
             "/data": {
-                target: "http://192.168.2.134:8002",
+                target: "http://0.0.0.0:8002",
                 changeOrigin: true,
                 pathRewrite: {
                     "^/data": ""
