@@ -38,6 +38,7 @@ func init() {
 	beego.Router("/fileType", &controllers.TypeListController{})             //文件类型
 	beego.Router("/geoSave", &controllers.GeoDataSaveController{})           //保存地质数据接口
 	beego.Router("/transformation", &controllers.TransformationController{}) //转换VTK网格 20200921
+	
 
 	//流程化接口
 	beego.Router("/process/upload", &controllers.ProcessuploadFileController{}) //流程上传

@@ -26,6 +26,11 @@ func HandleWord(filePath string) ([]string, error) {
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 //HandlePDF 处理pdf文件
+/**
+*@filePath		处理文件的全路径
+*
+*@[]string		
+**/
 func HandlePDF(filePath string) ([]string, error) {
 
 	// f, errf := os.Open(filePath)
@@ -39,7 +44,9 @@ func HandlePDF(filePath string) ([]string, error) {
 	if err != nil {
 		beego.Debug("word read err", err)
 	}
+	//doc.Paragraphs()得到包含文档所有的段落的切片
 	for _, page := range doc.Paragraphs() {
+		//run为每个段落相同格式的文字组成的片段
 		for _, run := range page.Runs() {
 			//beego.Debug("doc :", run.Text())
 			data = append(data, run.Text())

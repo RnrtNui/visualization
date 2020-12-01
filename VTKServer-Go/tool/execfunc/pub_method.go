@@ -328,19 +328,33 @@ func CallCommandPro(uploadFilePath string, fileName string) string {
 }
 
 //DoesJSONExist 是否存在json文件
+/**
+*@uploadFilePath		文件上传路径
+*@fileName				上传文件名
+*
+*返回值 string string string
+*@fileType 文件类型
+*@staticFile		为/dicom/+带有json后缀的文件名全称
+*@第三个返回参数， 判断_POINTS 类型文件是否存在，存在yes，不存在no
+*/
 func DoesJSONExist(uploadFilePath string, fileName string) (string, string, string) {
 	var pointJSONFile string
 	var fileType string
 	var errp error
 	nameStr := strings.Split(fileName, ".")
+	// jsonFile 为文件名+后缀的形式
 	jsonFile := fileName + ".json"
 	if !strings.Contains(fileName, ".obj") {
 		pointJSONFile = strings.Replace(fileName, "."+nameStr[len(nameStr)-1], "_"+nameStr[len(nameStr)-1]+"_POINTS.json", -1)
 	}
+	// 返回将所有字母都转为对应的小写
 	fileName1 := strings.ToLower(fileName)
 	switch {
 	case strings.Contains(fileName1, ".msh") && len(strings.Split(fileName1, ".")) == 2:
 		fileType = ".msh"
+	// 20201201 gmsh 添加
+	case strings.Contains(fileName1, ".gmsh"):
+		fileType = ".gmsh"
 	case strings.Contains(fileName1, ".csv"):
 		fileType = ".csv"
 	case strings.Contains(fileName1, ".vtk"):
@@ -372,6 +386,7 @@ func DoesJSONExist(uploadFilePath string, fileName string) (string, string, stri
 		_, errp = os.Stat(jsonPFilePath)
 	} else {
 		if errf == nil {
+			// staticFile 为/dicom/+带有json后缀的文件名全称
 			staticFile := "/dicom/" + jsonFile
 			return fileType, staticFile, "no"
 		}
@@ -430,6 +445,13 @@ func IsBinary(filePath string) bool {
 }
 
 //ProcessData 处理各类型数据
+/**20201125 添加备注
+*@uploadFilePath    文件上传的路径
+*@proName			项目名称
+*@fileName			文件名称
+*@data				为/dicom/+带有json后缀的文件名全称
+*@pdata				判断_POINTS.json 类型文件是否存在
+*/
 func ProcessData(uploadFilePath string, proName string, fileName string, data string, pdata string) (interface{}, string, error) {
 	nameStr := strings.Split(fileName, ".")
 	jsonFile := fileName + ".json"
@@ -593,6 +615,7 @@ func ProcessData(uploadFilePath string, proName string, fileName string, data st
 		if !IsExists(filePath) {
 			return "文件不存在", "无", nil
 		}
+		// 处理msh文件内容 20201125添加备注
 		strArrs, err := HandleMSH(filePath)
 		if len(strArrs) == 0 {
 			return "数据为空", "无", err
@@ -609,6 +632,8 @@ func ProcessData(uploadFilePath string, proName string, fileName string, data st
 		}
 		//返回前端数据信息
 		return strArrs, ".msh", nil
+
+	// 处理post.msh 文件
 	case strings.Contains(fileName, ".post.msh"):
 		jsonFilePath := filepath.Join(uploadFilePath, "dicom", jsonFile)
 		jsonPFilePath := filepath.Join(uploadFilePath, "dicom", jsonPFile)
@@ -635,6 +660,8 @@ func ProcessData(uploadFilePath string, proName string, fileName string, data st
 		}
 		//返回前端数据信息
 		return strArrs, ".post.msh", nil
+
+	// 处理 flavia.msh 文件
 	case strings.Contains(fileName, ".flavia.msh"):
 		jsonFilePath := filepath.Join(uploadFilePath, "dicom", jsonFile)
 		jsonPFilePath := filepath.Join(uploadFilePath, "dicom", jsonPFile)
@@ -676,12 +703,24 @@ func ProcessData(uploadFilePath string, proName string, fileName string, data st
 }
 
 //DataPro 处理各类型数据
+/**
+*@uploadFilePath		文件路径
+*@fileName				文件名 格式为
+*@data					为/dicom/+带有json后缀的文件名全称
+*@pdata					判断_POINTS 类型文件是否存在，存在yes，不存在no
+*
+*返回值
+*@interface{}
+*@string				
+@error					错误信息
+**/
 func DataPro(uploadFilePath string, fileName string, data string, pdata string) (interface{}, string, error) {
 	if !IsExists(filepath.Join(uploadFilePath, "process", fileName)) {
 		return "0", "文件不存在,请上传数据文件", nil
 	}
 	nameStr := strings.Split(fileName, ".")
 	jsonFile := fileName + ".json"
+	//将文件名（fileName）中的分割，倒数第二个前面的字段， 替换为 _+倒数第二个字段+_POINTS.json 文件名的格式
 	jsonPFile := strings.ReplaceAll(fileName, "."+nameStr[len(nameStr)-1], "_"+nameStr[len(nameStr)-1]+"_POINTS.json")
 	beego.Debug("jsonFile", jsonFile, jsonPFile)
 	switch {
@@ -721,6 +760,7 @@ func DataPro(uploadFilePath string, fileName string, data string, pdata string) 
 		return csvArr, ".csv", nil
 	case strings.Contains(fileName, ".vtk"):
 		jsonFilePath := filepath.Join(uploadFilePath, "dicom", jsonFile)
+		// jsonPFilePath为全部上传路径
 		jsonPFilePath := filepath.Join(uploadFilePath, "dicom", jsonPFile)
 		filePath := filepath.Join(uploadFilePath, "process", fileName)
 		if !IsExists(filePath) {

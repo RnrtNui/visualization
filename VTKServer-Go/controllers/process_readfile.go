@@ -29,6 +29,7 @@ func (u *ProReadFileController) Get() {
 		u.ServeJSON()
 		return
 	}
+	// 
 	data, err := execfunc.HandlePDF(filePath)
 	if err != nil {
 		beego.Error("pdf read err:", err)
