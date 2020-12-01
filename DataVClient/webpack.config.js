@@ -30,7 +30,7 @@ module.exports = {
 
     devServer: {
         port: 3601,
-        host: '192.168.2.134',
+        host: '0.0.0.0',
         useLocalIp: true,
         watchContentBase: true,
         watchOptions: {

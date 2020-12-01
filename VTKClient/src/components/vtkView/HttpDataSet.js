@@ -7,7 +7,7 @@
 // For vtk factory
 import 'vtk.js/Sources/Common/DataModel/ImageData';
 import 'vtk.js/Sources/Common/DataModel/PolyData';
-import 'vtk.js/Sources/favicon';
+// import './viewType/imageView/node_modules/vtk.js/Sources/favicon';
 import ReactDOM from 'react-dom';
 import React from 'react';
 import { Spin } from 'antd';

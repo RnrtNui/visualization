@@ -18,7 +18,12 @@ import ArrowSource from 'vtk.js/Sources/Filters/Sources/ArrowSource';
 import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder';
 import vtkPlaneSource from 'vtk.js/Sources/Filters/Sources/PlaneSource';
 import vtkArrowSource from 'vtk.js/Sources/Filters/Sources/ArrowSource';
+// import vtkLabelWidget from 'vtk.js/Sources/Interaction/Widgets/LabelWidget';
+// import TextAlign from 'vtk.js/Sources/Interaction/Widgets/LabelRepresentation/Constants';
+import vtkConeSource from 'vtk.js/Sources/Filters/Sources/ConeSource';
+import vtkCubeSource from 'vtk.js/Sources/Filters/Sources/CubeSource';
 // import vtkSphereSource from 'vtk.js/Sources/Filters/Sources/SphereSource';
+import vtkPointPicker from 'vtk.js/Sources/Rendering/Core/PointPicker';
 import vtkGlyph3DMapper from 'vtk.js/Sources/Rendering/Core/Glyph3DMapper';
 import vtkOutlineFilter from 'vtk.js/Sources/Filters/General/OutlineFilter';
 import vtkAppendPolyData from 'vtk.js/Sources/Filters/General/AppendPolyData';
@@ -39,6 +44,7 @@ import vtkMouseCameraTrackballZoomManipulator from 'vtk.js/Sources/Interaction/M
 import vtkMouseCameraTrackballRotateManipulator from 'vtk.js/Sources/Interaction/Manipulators/MouseCameraTrackballRotateManipulator';
 import vtkMouseCameraTrackballZoomToMouseManipulator from 'vtk.js/Sources/Interaction/Manipulators/MouseCameraTrackballZoomToMouseManipulator';
 import vtkMouseCameraTrackballMultiRotateManipulator from 'vtk.js/Sources/Interaction/Manipulators/MouseCameraTrackballMultiRotateManipulator';
+import * as actions from '../../../redux/actions/index';
 
 // 渲染准备
 export const Rendering = (model, container) => {
@@ -90,7 +96,7 @@ export const Rendering = (model, container) => {
     model.renderWindow = renderWindow;
 };
 
-//截图功能
+// 截图功能
 export function Screen(element) {
     const newCanvas = document.createElement("canvas");
     const dom_width = parseInt(window.getComputedStyle(element).width);
@@ -147,7 +153,7 @@ export function Screen(element) {
     });
 }
 
-//gl上下文
+// gl上下文
 export const gl = (OpenGlRW) => {
     OpenGlRW.initialize();
     let gl = OpenGlRW.getShaderCache().getContext();
@@ -334,15 +340,15 @@ export const reassignManipulators = (model) => {
     }
 };
 
-//改变显示模式
+// 改变显示模式
 export const changeManipulators = (model, opt, keydown, useLight, useAxis, scalar, mode, container1, lut, inputValue, polydata1, polydata2, min, max, Scalar) => {
-    //显示实体单元、网格或点
-    if (keydown === "R") {
+    // 显示实体单元、网格或点
+    if (keydown === "RESET") {
         if (model.renderer) {
             model.renderer.resetCamera();
             model.renderWindow.render();
         }
-    } else if (keydown === "W") {
+    } else if (keydown === "LINE") {
         if (model.renderer) {
             let ac = model.renderer.getActors();
             ac.forEach((anActor) => {
@@ -350,7 +356,7 @@ export const changeManipulators = (model, opt, keydown, useLight, useAxis, scala
             });
             model.renderWindow.render();
         }
-    } else if (keydown === "S") {
+    } else if (keydown === "POLY") {
         if (model.renderer) {
             let ac = model.renderer.getActors();
             ac.forEach((anActor) => {
@@ -358,7 +364,7 @@ export const changeManipulators = (model, opt, keydown, useLight, useAxis, scala
             });
             model.renderWindow.render();
         }
-    } else if (keydown === "V") {
+    } else if (keydown === "POINT") {
         if (model.renderer) {
             let ac = model.renderer.getActors();
             ac.forEach((anActor) => {
@@ -377,10 +383,10 @@ export const changeManipulators = (model, opt, keydown, useLight, useAxis, scala
         }
 
     } else if (Scalar === false) {
-        
+
     }
 
-    //灯光
+    // 灯光
     if (useLight) {
         if (model.renderer) {
             const openGLRenderWindow = model.interactor.getView();
@@ -446,7 +452,7 @@ export const changeManipulators = (model, opt, keydown, useLight, useAxis, scala
                 lastProcessedActor = prop;
                 // Make the picked actor green
                 // prop.getProperty().setColor(...GREEN);
-                // We hit the glyph, let's scale the picked glyph
+                // We hit the glyph, let's ruler the picked glyph
                 if (needGlyphCleanup) {
                     needGlyphCleanup = false;
                 }
@@ -501,8 +507,7 @@ export const changeManipulators = (model, opt, keydown, useLight, useAxis, scala
         }
     }
 
-    //显示坐标系
-
+    // 显示坐标系
     if (useAxis === true) {
         if (model.orientationWidget) {
             model.orientationWidget.setEnabled(true);
@@ -515,37 +520,37 @@ export const changeManipulators = (model, opt, keydown, useLight, useAxis, scala
         }
     };
 
-    //改变鼠标事件
-    if (opt === "Rotate") {
+    // 改变鼠标事件
+    if (opt === "ROTATE") {
         if (model.uiComponents) {
             model.uiComponents["leftButton"] = { manipName: "Rotate" };
             model.uiComponents["scrollMiddleButton"] = { manipName: "Zoom" };
         }
-    } else if (opt === "Roll") {
+    } else if (opt === "ROLL") {
         if (model.uiComponents) {
             model.uiComponents["leftButton"] = { manipName: "Roll" };
             model.uiComponents["scrollMiddleButton"] = { manipName: "Zoom" };
         }
-    } else if (opt === "Pan") {
+    } else if (opt === "PAN") {
         if (model.uiComponents) {
             model.uiComponents["leftButton"] = { manipName: "Pan" };
             model.uiComponents["scrollMiddleButton"] = { manipName: "Zoom" };
         }
-    } else if (opt === "Zoom") {
+    } else if (opt === "ZOOM") {
         if (model.uiComponents) {
             model.uiComponents["scrollMiddleButton"] = { manipName: "Zoom" };
         }
     } else {
         if (model.uiComponents) {
-            model.uiComponents["leftButton"] = { manipName: "Rotate" };
-            model.uiComponents["scrollMiddleButton"] = { manipName: "Zoom" };
+            model.uiComponents["leftButton"] = { manipName: "None" };
+            model.uiComponents["scrollMiddleButton"] = { manipName: "None" };
         }
     };
     reassignManipulators(model);
     // model.renderWindow.render();
 }
 
-//显示边框
+// 显示边框
 export const showBounds = (bounds, model, container, polydata) => {
     if (bounds === true) {
         if (document.querySelector('.textCanvas')) {
@@ -594,7 +599,195 @@ export const showBounds = (bounds, model, container, polydata) => {
     }
 }
 
-//显示矢量
+// 显示坐标刻度
+export const showBoundRuler = (ruler, model, container, polydata, props, ranging) => {
+    if (ruler === true) {
+        model.activeCamera.set(model.activeCameraState);
+        props.dispatch(actions.setMoveStyle(actions.moveType.NONE));
+        if (document.querySelector('.textCanvas')) {
+            container.current.children[0].removeChild(document.querySelector('.textCanvas'))
+            model.renderer.removeActor(model.ruler1);
+            model.renderer.removeActor(model.ruler2);
+        }
+        if (model.ruler1 || model.ruler2) {
+            model.renderer.removeActor(model.ruler1);
+            model.renderer.removeActor(model.ruler2);
+        }
+        // model.interactor.setInteractorStyle(vtkInteractorStyleTrackballCamera.newInstance());
+        const textCanvas = document.createElement('canvas');
+        textCanvas.style.position = "absuloat";
+        textCanvas.classList.add(style.container, 'textCanvas');
+        container.current.children[0].appendChild(textCanvas);
+        let dims = document.querySelector(".vtk-container").getBoundingClientRect();
+        model.dims = dims;
+        textCanvas.setAttribute('width', dims.width);
+        textCanvas.setAttribute('height', dims.height);
+        let textCtx = textCanvas.getContext('2d');
+        model.textCtx = textCtx;
+        const outline = vtkOutlineFilter.newInstance();
+        outline.setInputData(polydata);
+        let bound = outline.getOutputData().getState().points.values;
+        if (model.ruler1 === undefined) {
+            const cubeSource1 = vtkCubeSource.newInstance({
+                xLength: bound[3] * 1.1,
+                yLength: 1.0,
+                zLength: 1.0,
+                center: [bound[3] * 1.1 / 2, bound[1], 0.0],
+            });
+            const lineX = cubeSource1.getOutputData();
+            const coneSource1 = vtkConeSource.newInstance({
+                height: 10.0,
+                radius: 1.2,
+                resolution: 2,
+                center: [bound[3] * 1.1, bound[4], bound[5]],
+                direction: [1.0, 0.0, 0.0],
+                capping: true,
+            });
+            const coneX = coneSource1.getOutputData();
+            const map1 = vtkMapper.newInstance();
+            const act1 = vtkActor.newInstance();
+            const sourceData1 = vtkAppendPolyData.newInstance();
+            sourceData1.setInputData(lineX);
+            sourceData1.addInputData(coneX);
+            map1.setInputConnection(sourceData1.getOutputPort());
+            act1.setMapper(map1);
+            model.ruler1 = act1;
+        }
+        if (model.ruler2 === undefined) {
+            const cubeSource2 = vtkCubeSource.newInstance({
+                xLength: 1,
+                yLength: -bound[1] + bound[3] * 0.1,
+                zLength: 1,
+                center: [0, bound[1] * 0.5 + bound[3] * 0.05, 0.0],
+            });
+            const lineY = cubeSource2.getOutputData();
+            const coneSource2 = vtkConeSource.newInstance({
+                height: 10.0,
+                radius: 1.2,
+                resolution: 2,
+                center: [0, bound[3] * 0.1, 0],
+                direction: [0.0, 1.0, 0.0],
+                capping: true,
+            });
+            const coneY = coneSource2.getOutputData();
+            const map2 = vtkMapper.newInstance();
+            const act2 = vtkActor.newInstance();
+            const sourceData2 = vtkAppendPolyData.newInstance();
+            sourceData2.setInputData(lineY);
+            sourceData2.addInputData(coneY);
+            map2.setInputConnection(sourceData2.getOutputPort());
+            act2.setMapper(map2);
+            model.ruler2 = act2;
+        }
+
+        // ruler
+        if (model.rulerXactor === undefined) {
+            let rulerPoints = [];
+            const rulerX = [];
+            for (let i = 0; i < 11; i++) {
+                rulerX.push({
+                    xLength: 0.5,
+                    yLength: bound[3] * 0.025,
+                    zLength: 1,
+                    center: [bound[3] * i * 0.1, bound[4] - bound[3] * 0.0125, 0],
+                });
+                rulerPoints.push(bound[3] * i * 0.1, bound[4] - bound[3] * 0.06, 0);
+            }
+            const sourceDataRulerX = vtkAppendPolyData.newInstance();
+            sourceDataRulerX.setInputData(vtk({
+                vtkClass: 'vtkPolyData',
+            }));
+            for (let i = 0; i < rulerX.length; i++) {
+                const cubeSourceRulerX = vtkCubeSource.newInstance(rulerX[i]);
+                const x_ruler = cubeSourceRulerX.getOutputData();
+                sourceDataRulerX.addInputData(x_ruler);
+            }
+            const rulerXmapper = vtkMapper.newInstance();
+            const rulerXactor = vtkActor.newInstance();
+            rulerXmapper.setInputConnection(sourceDataRulerX.getOutputPort());
+            rulerXactor.setMapper(rulerXmapper);
+            model.rulerXactor = rulerXactor;
+            model.rulerPoints = rulerPoints;
+            model.rulerX = rulerX;
+        }
+        model.renderer.addActor(model.rulerXactor);
+
+
+        if (model.rulerYactor === undefined) {
+            const rulerY = [];
+            let ratio = Math.round(-bound[4] / bound[3] * 10);
+            for (let i = 0; i <= ratio; i++) {
+                rulerY.push({
+                    xLength: bound[3] * 0.025,
+                    yLength: 0.5,
+                    zLength: 1,
+                    center: [0 - bound[3] * 0.0125, bound[1] * i / ratio, 0],
+                })
+                model.rulerPoints.push(0 - bound[3] * 0.08, bound[1] * i / ratio, 0);
+            }
+            const sourceDataRulerY = vtkAppendPolyData.newInstance();
+            sourceDataRulerY.setInputData(vtk({
+                vtkClass: 'vtkPolyData',
+            }));
+            for (let i = 0; i < rulerY.length; i++) {
+                const cubeSourceRulerY = vtkCubeSource.newInstance(rulerY[i]);
+                const x_ruler = cubeSourceRulerY.getOutputData();
+                sourceDataRulerY.addInputData(x_ruler);
+            }
+            const rulerYmapper = vtkMapper.newInstance();
+            const rulerYactor = vtkActor.newInstance();
+            rulerYmapper.setInputConnection(sourceDataRulerY.getOutputPort());
+            rulerYactor.setMapper(rulerYmapper);
+            model.rulerYactor = rulerYactor;
+            model.rulerY = rulerY;
+        }
+        
+        model.renderer.addActor(model.rulerYactor);
+        const psMapper = vtkPixelSpaceCallbackMapper.newInstance();
+        psMapper.setInputData(vtk({
+            vtkClass: 'vtkPolyData',
+            points: {
+                vtkClass: 'vtkPoints',
+                dataType: 'Float32Array',
+                numberOfComponents: 3,
+                values: model.rulerPoints,
+            },
+        }));
+        psMapper.setCallback((coordsList) => {
+            textCtx.clearRect(0, 0, dims.width, dims.height);
+            coordsList.forEach((xy, idx) => {
+                textCtx.font = '14px serif';
+                textCtx.fillStyle = "#fff"
+                textCtx.textAlign = 'center';
+                textCtx.textBaseline = 'middle';
+                if (idx < 11) {
+                    textCtx.fillText(`${model.rulerX[idx].center[0].toFixed(1)}`, xy[0], dims.height - xy[1]);
+                } else {
+                    textCtx.fillText(`${model.rulerY[idx - 11].center[1].toFixed(1)}`, xy[0], dims.height - xy[1]);
+                }
+
+            });
+        });
+        const textActor = vtkActor.newInstance();
+        textActor.setMapper(psMapper);
+        model.textActor = textActor;
+        model.renderer.addActor(model.textActor);
+        model.renderer.addActor(model.ruler1);
+        model.renderer.addActor(model.ruler2);
+    } else {
+        props.dispatch(actions.setMoveStyle(actions.moveType.ROTATE));
+        model.renderer.removeActor(model.ruler1);
+        model.renderer.removeActor(model.ruler2);
+        model.renderer.removeActor(model.rulerXactor);
+        model.renderer.removeActor(model.rulerYactor);
+        model.renderer.removeActor(model.textActor);
+        if (document.querySelector('.textCanvas')) {
+            container.current.children[0].removeChild(document.querySelector('.textCanvas'))
+        }
+    }
+}
+
+// 显示矢量
 export const showVector = (vector, model, points, vectorData, lut1, min, max, ArrowSize) => {
     if (vector === true) {
         let vector = vtk({
@@ -626,7 +819,7 @@ export const showVector = (vector, model, points, vectorData, lut1, min, max, Ar
         vecMapper1.setInputConnection(arrowSource.getOutputPort(), 1);
         vecMapper1.setOrientationArray('pointVectors');
         vecMapper1.setScalarRange(min, max);
-        vecMapper1.setScaleFactor(ArrowSize)
+        vecMapper1.setRulerFactor(ArrowSize)
         const vecActor1 = vtkActor.newInstance();
         vecActor1.setMapper(vecMapper1);
         model.renderer.addActor(vecActor1);
@@ -637,7 +830,7 @@ export const showVector = (vector, model, points, vectorData, lut1, min, max, Ar
         }
     }
 }
-//读取json
+// 读取json
 export const readJson = (filePath, _this, fileName, type) => {
     let xhr = new XMLHttpRequest()
     xhr.open('GET', '/data' + filePath, true);

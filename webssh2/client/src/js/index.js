@@ -8,7 +8,7 @@ import { faBars, faClipboard, faDownload, faKey, faCog } from '@fortawesome/free
 library.add(faBars, faClipboard, faDownload, faKey, faCog)
 dom.watch()
 
-let connectUrl = 'http://192.168.6.103:8004'
+let connectUrl = 'http://127.0.0.1:8004'
 
 require('xterm/dist/xterm.css')
 require('../css/style.css')

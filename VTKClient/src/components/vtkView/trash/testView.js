@@ -8,7 +8,7 @@
 import React, { Component } from 'react';
 import { Modal, Button } from 'antd';
 import cookie from 'react-cookies';
-import axios from 'axios'
+import axios from '../../axios'
 export default class offView extends Component {
     constructor(props) {
         super(props);

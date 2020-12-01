@@ -9,7 +9,6 @@ import { Tree, Spin } from 'antd';
 import { CarryOutOutlined } from '@ant-design/icons';
 import axios from "../axios";
 import ReactDOM from 'react-dom';
-import { goUrl } from "../../url";
 
 export default class Sider extends React.Component {
   constructor(props) {
@@ -22,7 +21,7 @@ export default class Sider extends React.Component {
   Select = (keys, event) => {
     let { getData } = this.props;
     if (event.node.title.split('.')[1] !== "vti" && event.node.title.split('.')[1] !== "tiff") {
-      axios.post(goUrl + '/vtkReadFile', { fileName: event.node.title, projectName: "3" })
+      axios.post(global.baseUrl+'/vtkReadFile', { fileName: event.node.title, projectName: "3" })
         .then(function (response) {
           if (response.data.data) {
             getData({ "fileName": event.node.title, "data": response.data });

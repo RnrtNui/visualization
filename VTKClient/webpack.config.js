@@ -2,8 +2,13 @@ var path = require("path");
 var webpack = require("webpack");
 var vtkRules = require('vtk.js/Utilities/config/dependency.js').webpack.core.rules;
 var HtmlWebpackPlugin = require('html-webpack-plugin');
+const uglify = require('uglifyjs-webpack-plugin');
 const ExtractTextPlugin = require("extract-text-webpack-plugin");
-
+const GenerateAssetPlugin = require('generate-asset-webpack-plugin')
+const createServerConfig = function (compilation) {
+    let serverConfig = { baseUrl: 'http://127.0.0.1:8002' };   //run build 后端配置的ip地址
+    return JSON.stringify(serverConfig);
+}
 module.exports = {
     mode: "development",
     optimization: {
@@ -96,6 +101,7 @@ module.exports = {
     },
 
     plugins: [
+        // new uglify(),    //压缩js代码
         new webpack.HotModuleReplacementPlugin(),
         new webpack.NamedModulesPlugin(),//当开启 HMR 的时候使用该插件会显示模块的相对路径，建议用于开发环境。
         new HtmlWebpackPlugin({
@@ -105,9 +111,16 @@ module.exports = {
         new ExtractTextPlugin("styles.css"),
         new webpack.DefinePlugin({
             "process.env": {
-            NODE_ENV: JSON.stringify("production")
+                NODE_ENV: JSON.stringify("production")
             }
-        }),  
+        }),
+        new GenerateAssetPlugin({
+            filename: 'serverconfig.json',
+            fn: (compilation, cb) => {
+                cb(null, createServerConfig(compilation))
+            },
+            extraFiles: []
+        }),
     ],
     devtool: "inline-source-map",//每个module会通过eval()来执行，生成一个没有列信息（column-mappings）的SourceMaps文件，不包含loader的 sourcemap（譬如 babel 的 sourcemap）.
 }

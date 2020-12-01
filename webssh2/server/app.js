@@ -14,7 +14,7 @@ var express = require('express')
 // sane defaults if config.json or parts are missing
 let config = {
   'listen': {
-    'ip': '192.168.6.103',
+    'ip': '127.0.0.1',
     'port': 8004
   },
   'user': {

@@ -20,6 +20,7 @@ import CloudOfWords from '../component/CloudOfWords';
 import Geographical from '../component/Geographical';
 import BaiDuMap from '../component/BaiDuMap';
 import GoogleMap from '../component/GoogleMap';
+import Vector from '../component/vector'
 import { createBrowserHistory } from 'history';
 const browserHistory = createBrowserHistory();
 export default class VtkRouter extends React.Component {
@@ -41,6 +42,7 @@ export default class VtkRouter extends React.Component {
                     <Route exact path="/echarts1" component={DateView1} />                  {/* Watermark-Echarts  */}
                     <Route exact path="/echarts2" component={DateView2} />                  {/* 极坐标系下的堆叠柱状图 */}
                     <Route exact path="/echarts3" component={DateView3} />                  {/* 3D Bar with Dataset */}
+                    <Route exact path="/vector" component={Vector} />                  {/* 3D 矢量图 */}
                 </Switch>
             </Router>
         );

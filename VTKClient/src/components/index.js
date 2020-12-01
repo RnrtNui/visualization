@@ -6,229 +6,136 @@
 */
 import React from "react";
 import axios from "./axios";
-import { goUrl } from "../url";
-import MenuBar from './MenuBar';
+import MenuBar from './MenuBar/MenuContainer';
 import cookie from 'react-cookies';
 import { Col, Layout } from "antd";
 import Sider from './SiderBar/index';
-import CsvView from "./vtkView/view/csvView";
-import MshView from "./vtkView/view/mshView";
-import GmshView from "./vtkView/view/gmshView";
-import VtkView from "./vtkView/view/vtkView";
-import OffView from "./vtkView/view/offView";
-import ObjView from "./vtkView/view/objView";
-import InpView from "./vtkView/view/inpView";
-import ImageView from "./vtkView/view/imageView";
-import JsonView from "./vtkView/view/jsonView";
-import FlaviaView from "./vtkView/view/flaviaMshView";
-import PostMshView from "./vtkView/view/postMshView";
-import { readJson } from "./vtkView/common/index"
+import MshView from "./vtkView/viewType/mshView/index";
+import GmshView from "./vtkView/viewType/gmshView/index";
+import VtkView from "./vtkView/viewType/vtkView/index";
+import OffView from "./vtkView/viewType/offView/index";
+import ObjView from "./vtkView/viewType/objView/index";
+import InpView from "./vtkView/viewType/inpView/index";
+import ImageView from "./vtkView/viewType/imageView/index";
+import JsonView from "./vtkView/viewType/jsonView/index";
+import FlaviaView from "./vtkView/viewType/flaviaMshView/index";
+import PostMshView from "./vtkView/viewType/postMshView/index";
+import { readJson } from "./vtkView/common/index";
+import { CsvViewContainer, CsvViewXyContainer, CsvViewXyzNoContainer, CsvViewXyzContainer } from './vtkView/viewType/csvView/index';
 
 const { Content } = Layout;
-
 export default class Vtk extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
             fileName: "",
-            fileList: [],
             data: {
                 "data": [],
                 type: ''
             },
-            vtkRender: false,
-            tree: {},
-            display: "none",
-            displayBar: 0,
-            usePointPicker: null,
-            useCellPicker: null,
-            useAxis: false,
-            Scalar: true,
-            Screen: null,
-            keydown: "",
-            opt: "Rotate",
-            size: "",
-            light: false,
-            bounds: false,
         };
     };
-
     componentDidMount() {
-        document.addEventListener("keydown", this.onKeyDown);
         let _this = this;
-        if (this.props.match.params.fileName !== "null" && this.props.match.params.projectName) {
-            if (this.props.match.params.fileName.split('.')[1] === 'vti' ||
-                this.props.match.params.fileName.split('.')[1] === 'tiff') {
-                _this.setState({
-                    fileName: this.props.match.params.fileName,
-                    data: { type: '.vti' }
-                });
-            } else {
-                axios.post(goUrl + '/vtkReadFile', _this.props.match.params).then(function (response) {
-                    if (response.data.data) {
-                        cookie.save('filename', _this.props.match.params.fileName);
+        let xhr = new XMLHttpRequest();
+        xhr.open('GET', __dirname + 'serverconfig.json', true);
+        xhr.responseType = 'json';
+        xhr.send();
+        xhr.onreadystatechange = (e) => {
+            if (xhr.readyState === 4) {
+                global.baseUrl = xhr.response.baseUrl;
+                if (this.props.match.params.fileName !== "null" && this.props.match.params.projectName) {
+                    if (this.props.match.params.fileName.split('.')[1] === 'vti' ||
+                        this.props.match.params.fileName.split('.')[1] === 'tiff') {
                         _this.setState({
-                            fileName: _this.props.match.params.fileName,
-                            data: response.data
+                            fileName: this.props.match.params.fileName,
+                            data: { type: '.vti' }
                         });
                     } else {
-                        readJson(response.data.filePath, _this, _this.props.match.params.fileName, response.data.type);
-                    }
-                }).catch(function (error) {
-                    console.log(error);
-                });
-            }
-        } else if (this.props.match.params.id) {
-            if (this.props.match.params.id.split('.')[1] === "json") {
-                readJson("/dicom/" + this.props.match.params.id, _this, this.props.match.params.id, '.json');
-            }
-            let id = { "fileName": this.props.match.params.id };
-            // axios.post(goUrl + '/mod', id).then(function (response) {
-            axios.post(goUrl + '/process/proUpTwo', id).then(function (response) {
-                if (response.data.data) {
-                    _this.setState({
-                        fileName: id["fileName"],
-                        data: response.data
-                    });
-                } else if (response.data.type !== ".obj" && response.data.filePath) {
-                    readJson(response.data.filePath, _this, id["fileName"], response.data.type);
-                } else if (response.data.type === ".obj") {
-                    let Suffix = response.data.filePath;
-                    if (Suffix.indexOf('.json') !== -1) {
-                        readJson(response.data.filePath, _this, id["fileName"], response.data.type);
-                    } else {
-                        _this.setState({
-                            fileName: id["fileName"],
-                            data: response.data
+                        axios.post(global.baseUrl + '/vtkReadFile', _this.props.match.params).then(function (response) {
+                            if (response.data.data) {
+                                cookie.save('filename', _this.props.match.params.fileName);
+                                _this.setState({
+                                    fileName: _this.props.match.params.fileName,
+                                    data: response.data
+                                });
+                            } else {
+                                readJson(response.data.filePath, _this, _this.props.match.params.fileName, response.data.type);
+                            }
+                        }).catch(function (error) {
+                            console.log(error);
                         });
                     }
-                }
-            })
-                .catch(function (err) {
-                    console.log(err)
-                })
-        } else {
-            if (cookie.load("filename")) {
-                let filenames = cookie.load("filename");
-                if (filenames.split('.')[1] === 'vti' || filenames.split('.')[1] === 'tiff') {
-                    _this.setState({
-                        fileName: filenames,
-                        data: { type: '.vti' }
-                    });
-                } else {
-                    let filename = {
-                        fileName: filenames,
-                        projectName: "3"
-                    };
-                    axios.post(goUrl + '/vtkReadFile', filename).then(function (response) {
+                } else if (this.props.match.params.id) {
+                    if (this.props.match.params.id.split('.')[1] === "json") {
+                        readJson("/dicom/" + this.props.match.params.id, _this, this.props.match.params.id, '.json');
+                    }
+                    let id = { "fileName": this.props.match.params.id };
+                    // axios.post("http://192.168.2.134:8002" + '/mod', id).then(function (response) {
+                    axios.post(global.baseUrl + '/process/proUpTwo', id).then(function (response) {
                         if (response.data.data) {
                             _this.setState({
-                                fileName: filenames,
+                                fileName: id["fileName"],
                                 data: response.data
                             });
                         } else if (response.data.type !== ".obj" && response.data.filePath) {
-                            readJson(response.data.filePath, _this, filenames, response.data.type);
+                            readJson(response.data.filePath, _this, id["fileName"], response.data.type);
                         } else if (response.data.type === ".obj") {
                             let Suffix = response.data.filePath;
                             if (Suffix.indexOf('.json') !== -1) {
-                                readJson(response.data.filePath, _this, filenames, response.data.type);
+                                readJson(response.data.filePath, _this, id["fileName"], response.data.type);
                             } else {
                                 _this.setState({
-                                    fileName: filenames,
+                                    fileName: id["fileName"],
                                     data: response.data
                                 });
                             }
-
                         }
-                    }).catch(function (error) {
-                        console.log(error);
-                    });
+                    }).catch(function (err) {
+                        console.log(err)
+                    })
+                } else {
+                    if (cookie.load("filename")) {
+                        let filenames = cookie.load("filename");
+                        if (filenames.split('.')[1] === 'vti' || filenames.split('.')[1] === 'tiff') {
+                            _this.setState({
+                                fileName: filenames,
+                                data: { type: '.vti' }
+                            });
+                        } else {
+                            let filename = {
+                                fileName: filenames,
+                                projectName: "3"
+                            };
+                            axios.post(global.baseUrl + '/vtkReadFile', filename).then(function (response) {
+                                if (response.data.data) {
+                                    _this.setState({
+                                        fileName: filenames,
+                                        data: response.data,
+                                    });
+                                } else if (response.data.type !== ".obj" && response.data.filePath) {
+                                    readJson(response.data.filePath, _this, filenames, response.data.type);
+                                } else if (response.data.type === ".obj") {
+                                    let Suffix = response.data.filePath;
+                                    if (Suffix.indexOf('.json') !== -1) {
+                                        readJson(response.data.filePath, _this, filenames, response.data.type);
+                                    } else {
+                                        _this.setState({
+                                            fileName: filenames,
+                                            data: response.data
+                                        });
+                                    }
+
+                                }
+                            }).catch(function (error) {
+                                console.log(error);
+                            });
+                        }
+                    }
                 }
             }
-        }
-    };
+        };
 
-    UNSAFE_componentWillMount() {
-        document.removeEventListener("keydown", this.onKeyDown);
-    };
-
-    // 获取标量结果
-    getScalar = (val) => {
-        this.setState({
-            Scalar: val
-        })
-    };
-
-    // 鼠标拖拽方法
-    onButton = (key) => {
-        this.setState({
-            keydown: key,
-            Scalar: null
-        });
-    };
-
-    // 属性框
-    onShow = (val) => {
-        this.setState({
-            display: val
-        });
-    };
-
-    // 色标卡显示、隐藏
-    onShowBar = (val) => {
-        this.setState({
-            displayBar: val
-        });
-    };
-
-    //显示边框
-    showBounds = (val) => {
-        this.setState({
-            bounds: val
-        });
-    }
-
-    //灯光开关
-    useLight = (val) => {
-        this.setState({
-            light: val
-        });
-    }
-
-    //鼠标事件
-    getOperation = (val) => {
-        this.setState({
-            opt: val
-        });
-    };
-
-    // 点拾取
-    usePointPic = (val) => {
-        this.setState({
-            usePointPicker: val,
-        });
-    };
-
-    // 单元拾取
-    useCellPic = (val) => {
-        this.setState({
-            useCellPicker: val,
-        });
-    };
-
-    // 坐标
-    useAxi = (val) => {
-        this.setState({
-            useAxis: val,
-            keydown: "",
-        });
-    };
-
-    // 截屏
-    useScreen = (val) => {
-        this.setState({
-            Screen: val
-        });
     };
 
     getData = (val) => {
@@ -243,19 +150,20 @@ export default class Vtk extends React.Component {
         });
     }
     render() {
-        let { data, fileName, display, displayBar, useAxis, keydown, usePointPicker, useCellPicker, light, opt, Scalar, Screen, bounds } = this.state;
+        let { data, fileName } = this.state;
+        let newData = data.data;
         if (this.props.match.params.projectName) {
             let show = "100vh"
             return (<div className="vtk-view views" style={{ width: "100%", height: "100vh" }}>{
-                this.state.data.type === ".csv" ? (< CsvView data={data} display={display} useScreen={Screen} useAxis={useAxis} fileName={fileName} opt={opt} show={show} keydown={keydown} />) :
-                    data.type === ".vtk" ? (< VtkView data={data} Scalar={Scalar} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
-                        data.type === ".post.msh" ? (< PostMshView data={data} Scalar={Scalar} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
-                            data.type === ".flavia.msh" ? (< FlaviaView data={data} Scalar={Scalar} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
-                                data.type === ".msh" ? (< MshView data={data} Scalar={Scalar} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
-                                    data.type === ".gmsh" ? (< GmshView data={data} Scalar={Scalar} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
-                                        data.type === ".off" ? (< OffView data={data} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
-                                            data.type === ".obj" ? (< ObjView data={data} filename={fileName} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
-                                                data.type === ".inp" ? (< InpView data={data} Scalar={Scalar} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
+                this.state.data.type === ".csv" ? (newData.length * 5 < newData[0].length ? (< CsvViewXyzNoContainer data={data} fileName={fileName} show={show} />) : newData[0].length === 3 ? (<CsvViewXyContainer data={data} fileName={fileName} show={show} />) : newData[0].length === 4 ? (<CsvViewXyzContainer data={data} fileName={fileName} show={show} />) : (<CsvViewContainer data={data} fileName={fileName} show={show} />)) :
+                    data.type === ".vtk" ? (< VtkView data={data} show={show} />) :
+                        data.type === ".post.msh" ? (< PostMshView data={data} show={show} />) :
+                            data.type === ".flavia.msh" ? (< FlaviaView data={data} show={show} />) :
+                                data.type === ".msh" ? (< MshView data={data} show={show} />) :
+                                    data.type === ".gmsh" ? (< GmshView data={data} show={show} />) :
+                                        data.type === ".off" ? (< OffView data={data} show={show} />) :
+                                            data.type === ".obj" ? (< ObjView data={data} filename={fileName} show={show} />) :
+                                                data.type === ".inp" ? (< InpView data={data} show={show} />) :
                                                     data.type === '.vti' ? (<ImageView filename={fileName} />) : null
             }</div>)
         } else if (this.props.match.params.id) {
@@ -279,23 +187,23 @@ export default class Vtk extends React.Component {
                         style={{ height: "calc(100vh - 64px)", display: "flex", width: "100%", backgroundColor: "#FFF" }} >
                         <Col className="visual-view views">
                             {
-                                data.type === ".csv" ? (< CsvView data={data} display={display} useScreen={Screen} useAxis={useAxis} opt={opt} fileName={fileName} show={show} keydown={keydown} />) :
-                                    data.type === ".json" ? (< JsonView data={data} Scalar={Scalar} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} />) :
-                                        data.type === ".vtk" ? (< VtkView data={data} Scalar={Scalar} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
-                                            data.type === ".msh" ? (< MshView data={data} Scalar={Scalar} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
-                                                data.type === ".gmsh" ? (< GmshView data={data} Scalar={Scalar} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
-                                                    data.type === ".flavia.msh" ? (< FlaviaView data={data} Scalar={Scalar} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
-                                                        data.type === ".post.msh" ? (< PostMshView data={data} Scalar={Scalar} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
-                                                            data.type === '.vti' ? (<ImageView filename={fileName} useScreen={Screen} display={display} />) :
-                                                                data.type === ".off" ? (< OffView data={data} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
-                                                                    data.type === ".obj" ? (< ObjView data={data} filename={fileName} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
-                                                                        data.type === ".inp" ? (< InpView data={data} filename={fileName} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} Scalar={Scalar} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) : null
+                                data.type === ".csv" ? (newData.length * 5 < newData[0].length ? (< CsvViewXyzNoContainer data={data} fileName={fileName} show={show} />) : newData[0].length === 3 ? (<CsvViewXyContainer data={data} fileName={fileName} show={show} />) : newData[0].length === 4 ? (<CsvViewXyzContainer data={data} fileName={fileName} show={show} />) : (<CsvViewContainer data={data} fileName={fileName} show={show} />)) :
+                                    data.type === ".json" ? (< JsonView data={data} show={show} />) :
+                                        data.type === ".vtk" ? (< VtkView data={data} show={show} />) :
+                                            data.type === ".msh" ? (< MshView data={data} show={show} />) :
+                                                data.type === ".gmsh" ? (< GmshView data={data} show={show} />) :
+                                                    data.type === ".flavia.msh" ? (< FlaviaView data={data} show={show} />) :
+                                                        data.type === ".post.msh" ? (< PostMshView data={data} show={show} />) :
+                                                            data.type === '.vti' ? (<ImageView filename={fileName} />) :
+                                                                data.type === ".off" ? (< OffView data={data} show={show} />) :
+                                                                    data.type === ".obj" ? (< ObjView data={data} filename={fileName} show={show} />) :
+                                                                        data.type === ".inp" ? (< InpView data={data} filename={fileName} show={show} />) : null
                             } </Col>
                     </Content>
                 </Layout>
             </Layout>)
         } else {
-            let show = "calc(100vh - 64px)"
+            let show = "calc(100vh - 64px)";
             return (
                 <div>
                     <Layout>
@@ -320,16 +228,16 @@ export default class Vtk extends React.Component {
                                 </Col >
                                 <Col className="vtk-view views">
                                     {
-                                        data.type === ".csv" ? (< CsvView data={data} display={display} useScreen={Screen} useAxis={useAxis} opt={opt} fileName={fileName} show={show} keydown={keydown} />) :
-                                            data.type === ".vtk" ? (< VtkView data={data} Scalar={Scalar} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
-                                                data.type === ".msh" ? (< MshView data={data} Scalar={Scalar} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
-                                                    data.type === ".gmsh" ? (< GmshView data={data} Scalar={Scalar} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
-                                                        data.type === ".flavia.msh" ? (< FlaviaView data={data} Scalar={Scalar} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
-                                                            data.type === ".post.msh" ? (< PostMshView data={data} Scalar={Scalar} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
-                                                                data.type === '.vti' ? (<ImageView filename={fileName} useScreen={Screen} display={display} />) :
-                                                                    data.type === ".off" ? (< OffView data={data} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
-                                                                        data.type === ".obj" ? (< ObjView data={data} filename={fileName} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) :
-                                                                            data.type === ".inp" ? (< InpView data={data} filename={fileName} useLight={light} useScreen={Screen} displayBar={displayBar} display={display} useAxis={useAxis} Scalar={Scalar} opt={opt} show={show} bounds={bounds} keydown={keydown} usePointPicker={usePointPicker} useCellPicker={useCellPicker} />) : null
+                                        data.type === ".csv" ? (newData.length * 5 < newData[0].length ? (< CsvViewXyzNoContainer data={data} fileName={fileName} show={show} />) : newData[0].length === 3 ? (<CsvViewXyContainer data={data} fileName={fileName} show={show} />) : newData[0].length === 4 ? (<CsvViewXyzContainer data={data} fileName={fileName} show={show} />) : (<CsvViewContainer data={data} fileName={fileName} show={show} />)) :
+                                            data.type === ".vtk" ? (< VtkView data={data} show={show} />) :
+                                                data.type === ".msh" ? (< MshView data={data} show={show} />) :
+                                                    data.type === ".gmsh" ? (< GmshView data={data} show={show} />) :
+                                                        data.type === ".flavia.msh" ? (< FlaviaView data={data} show={show} />) :
+                                                            data.type === ".post.msh" ? (< PostMshView data={data} show={show} />) :
+                                                                data.type === '.vti' ? (<ImageView filename={fileName} />) :
+                                                                    data.type === ".off" ? (< OffView data={data} show={show} />) :
+                                                                        data.type === ".obj" ? (< ObjView data={data} filename={fileName} show={show} />) :
+                                                                            data.type === ".inp" ? (< InpView data={data} filename={fileName} show={show} />) : null
                                     } </Col>
                             </Content>
                         </Layout>
